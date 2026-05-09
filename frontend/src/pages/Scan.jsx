@@ -296,15 +296,18 @@ const Scan = () => {
 
                 {/* ── Custom question input ── */}
                 <div className="scan-question-wrap">
-                  <input
+                  <div className="scan-question-label">
+                    <span>📝</span> Describe your issue (optional)
+                  </div>
+                  <textarea
                     className="scan-question-input"
-                    type="text"
-                    placeholder="Ask a specific question about this image… (optional)"
+                    placeholder="e.g. Yellow spots on leaves, what disease is this? / पत्तियों पर पीले धब्बे हैं, यह क्या बीमारी है?"
                     value={activeImg.question}
                     onChange={(e) => updateImageField(activeIdx, 'question', e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !activeImg.result && !activeImg.loading) analyzeImage(activeIdx); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey && !activeImg.result && !activeImg.loading) analyzeImage(activeIdx); }}
                   />
                 </div>
+
 
                 {/* ── Action buttons ── */}
                 <div className="scan-action-row">

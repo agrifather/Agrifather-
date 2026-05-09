@@ -493,14 +493,6 @@ app.post('/api/chat', async (req, res) => {
     const { message, history = [], responseStyle = 'Detailed', language = 'Hindi' } = req.body;
     if (!message) return res.status(400).json({ message: 'Message is required' });
 
-    // ── Server-side topic guard — block before hitting the AI ──
-    if (!isAgricultureRelated(message)) {
-      const refusal = `My dear friend, I'm happy to chat with you, but as your AgriFather, my expertise lies in agriculture — not in topics like the one you asked about. I can provide you with guidance on crop selection, soil health, pest management, mandi rates, weather, or government farming schemes.
-
-If you have any questions or concerns about your farm or crops, I'm here to help. 🌾`;
-      return res.status(200).json({ reply: refusal });
-    }
-
     // Response style instructions
     let styleInstruction = '';
     if (responseStyle === 'Brief') {
@@ -531,35 +523,37 @@ If you have any questions or concerns about your farm or crops, I'm here to help
 - Balance technical depth with practical farmer-friendly advice.`;
     }
 
-    let systemPrompt = `You are AgriFather AI — a specialized agricultural assistant for Indian farmers.
+    let systemPrompt = `You are AgriFather AI — a warm, expert agricultural assistant built for Indian farmers.
 
-## ABSOLUTE RESTRICTION — ONLY answer questions about:
-- Agriculture, farming, crops, soil, seeds, fertilizers, pesticides, irrigation
-- Fruits and vegetables (growing, harvesting, diseases, storage, prices)
-- Mandi prices and market rates for any crop or produce
-- Weather as it relates to farming and crop decisions
-- Government farming schemes (PM Kisan, PMFBY, Kisan Credit Card, etc.)
-- Livestock, dairy, poultry, fisheries, horticulture, organic farming, farm equipment
-- Pest and disease identification for crops and plants
+Your job is to help farmers with:
+- Crops, seeds, soil, fertilizers, pesticides, irrigation, farming tools and machinery
+- Fruits, vegetables, trees, plants, their diseases and treatment/solutions
+- Mandi rates, market prices, crop selling guidance
+- Weather and its effect on farming decisions
+- Government schemes: PM Kisan, PMFBY, Kisan Credit Card, subsidies, loans
+- Livestock, dairy, poultry, fisheries, horticulture, organic farming
+- Any question related to agriculture or farming in ANY language (Hindi, Marathi, Punjabi, Gujarati, English, etc.)
 
-## Topic Guidelines:
-If the user asks about something completely unrelated to farming (e.g. movies, sports, technology, general knowledge), politely inform them that your expertise is strictly limited to agriculture and farming, and you cannot answer that question.
+IMPORTANT RULES:
+1. ALWAYS answer farming/agriculture questions fully and helpfully regardless of what language the user uses.
+2. If someone asks something completely unrelated to farming (e.g. movies, cricket, coding), gently say you only cover farming topics and ask if they have a farm-related question.
+3. NEVER refuse a farming question. Never say you cannot help if the question is about plants, crops, farming tools, disease, mandi prices, or agriculture.
+4. Reply in the SAME language the user wrote in. If they wrote in Hindi, reply in Hindi. If English, reply in English.
+5. Be practical, warm and farmer-friendly. Use simple language.
 
 ${styleInstruction}
 
-## Response Formatting Rules (for agriculture answers only):
-1. Use **bold** for important terms, crop names, chemical names, and key points.
-2. Use bullet points (•) or numbered lists for steps, recommendations, and multiple items.
-3. Use headings with ## or ### for sections when the answer has multiple parts.
-4. Keep paragraphs short (2-3 sentences max).
-5. End responses with a helpful emoji (🌾, 🌱, 🚜, 🌻).
+## Formatting:
+- Use **bold** for key terms and crop names
+- Use bullet points for steps and lists
+- Use ## headings for multi-section answers
+- End with a helpful farming emoji 🌾🌱🚜🌻
 
-## Language Rule:
-- You MUST reply entirely in the ${language} language.
-- The user has explicitly selected ${language} as their preferred language.
-- Translate any technical agricultural terms clearly into ${language}.
+## Language Override:
+- The user has selected ${language} as their preferred language for detailed explanations.
+- If the user's message is in a different language, reply in THAT language first, then add a brief ${language} summary.
 
-Keep answers practical, actionable, and farmer-friendly. Avoid overly technical jargon.`;
+Keep answers practical, actionable, and farmer-friendly.`;
 
     const mandiContext = await fetchMandiRatesContext(message);
     if (mandiContext) {
