@@ -164,14 +164,10 @@
 
 /* AI row */
 .message-row.received {
-  background-color: var(--bg-color);
+  background-color: transparent;
   align-self: stretch;
   max-width: 100%;
   flex-direction: row;
-}
-
-.message-row.received:nth-child(even) {
-  background-color: var(--bg-secondary);
 }
 
 /* User row */
