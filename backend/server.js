@@ -147,7 +147,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
         console.log('OTP Email sent successfully!');
         res.status(200).json({ 
           message: 'OTP sent successfully to email',
-          otp: process.env.NODE_ENV !== 'production' ? otp : undefined 
+          otp: otp // Always return OTP for now so user can login
         });
       } catch (mailErr) {
         console.error('Email sending failed:', mailErr);
@@ -542,14 +542,9 @@ If you have any questions or concerns about your farm or crops, I'm here to help
 - Livestock, dairy, poultry, fisheries, horticulture, organic farming, farm equipment
 - Pest and disease identification for crops and plants
 
-## HARD RULE — Off-Topic Refusal:
-If the user asks ANYTHING outside the above list (e.g. cricket, sports, movies, entertainment, coding, politics, general trivia, finance, technology, personal advice, math, recipes for non-farm use, etc.) you MUST respond with ONLY this — fill in the bracketed parts, and do NOT add anything else:
+## Topic Guidelines:
+If the user asks about something completely unrelated to farming (e.g. movies, sports, technology, general knowledge), politely inform them that your expertise is strictly limited to agriculture and farming, and you cannot answer that question.
 
-"My dear friend, I'm happy to chat with you about [the topic they mentioned], but as your AgriFather, my expertise lies in agriculture, not [the category, e.g. sports/entertainment/technology]. I can provide you with guidance on crop selection, soil health, or pest management, but I'm not the best person to help with [the topic].
-
-If you have any questions or concerns about your farm or crops, I'm here to help. 🌾"
-
-Do NOT answer the off-topic question. Do NOT give hints or opinions on it. Do NOT say 'however' and then answer it anyway.
 ${styleInstruction}
 
 ## Response Formatting Rules (for agriculture answers only):
@@ -672,7 +667,7 @@ If the image is not related to agriculture, politely inform the user that you ar
         'X-Title': 'AgriFather AI'
       },
       body: JSON.stringify({
-        model: 'nvidia/nemotron-nano-12b-v2-vl:free',
+        model: 'google/gemini-2.5-flash:free',
         messages: [
           {
             role: 'user',
