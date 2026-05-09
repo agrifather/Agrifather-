@@ -17,6 +17,7 @@ const Login = () => {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError]   = useState('');
+  const [otpDisplay, setOtpDisplay] = useState(''); // fallback OTP shown on screen
 
   // ── Password login ─────────────────────────────────────────────────────────
   const handleLogin = async (e) => {
@@ -51,6 +52,7 @@ const Login = () => {
   // ── OTP login ──────────────────────────────────────────────────────────────
   const handleLoginWithOtp = async () => {
     setOtpError('');
+    setOtpDisplay('');
     if (!/\S+@\S+\.\S+/.test(otpEmail)) {
       setOtpError('Enter a valid email address.');
       return;
@@ -64,10 +66,14 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.otp) {
-          alert(`Test Mode: Your OTP is ${data.otp}`);
+        if (data.otp && data.emailFailed) {
+          // Email delivery failed — show OTP on screen as fallback
+          setOtpDisplay(data.otp);
+        } else if (data.otp) {
+          // Dev/test mode — show on screen but email also sent
+          setOtpDisplay(data.otp);
         }
-        navigate('/verify-otp', { state: { email: otpEmail, purpose: 'login' } });
+        navigate('/verify-otp', { state: { email: otpEmail, purpose: 'login', prefillOtp: data.otp } });
       } else {
         setOtpError(data.message || 'Could not send OTP.');
       }

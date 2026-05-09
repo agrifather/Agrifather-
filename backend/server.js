@@ -140,18 +140,29 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
         await transporter.sendMail({
           from: `"AgriFather" <${SMTP_EMAIL}>`,
           to: email,
-          subject: "Your AgriFather Login OTP",
-          text: `Your AgriFather OTP is ${otp}. It is valid for 5 minutes.`,
-          html: `<h3>Welcome to AgriFather</h3><p>Your OTP is <b>${otp}</b>. It is valid for 5 minutes.</p>`
+          subject: "Your AgriFather OTP Code",
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f5faf5;border-radius:12px;padding:32px;">
+              <h2 style="color:#2d7a23;margin-bottom:8px;">AgriFather 🌾</h2>
+              <p style="color:#333;">Your one-time password (OTP) for <b>${purpose === 'login' ? 'login' : 'registration'}</b> is:</p>
+              <div style="font-size:2.5rem;font-weight:bold;letter-spacing:12px;color:#2d7a23;text-align:center;padding:20px;background:#fff;border-radius:8px;border:2px dashed #a8d8a8;margin:20px 0;">${otp}</div>
+              <p style="color:#666;font-size:0.9rem;">This OTP is valid for <b>5 minutes</b>. Do not share it with anyone.</p>
+            </div>
+          `
         });
-        console.log('OTP Email sent successfully!');
+        console.log('[OTP] Email sent to:', email);
         res.status(200).json({ 
-          message: 'OTP sent successfully to email',
-          otp: otp // Always return OTP for now so user can login
+          message: 'OTP sent to your email',
+          otp: otp // Always return so frontend can show as fallback
         });
       } catch (mailErr) {
-        console.error('Email sending failed:', mailErr);
-        res.status(500).json({ message: 'Failed to send OTP email' });
+        console.error('[OTP] Email failed:', mailErr.message);
+        // Even if email fails, return OTP in response so user can still login
+        res.status(200).json({ 
+          message: 'OTP generated (email delivery failed — check below)',
+          otp: otp,
+          emailFailed: true
+        });
       }
     } else {
       console.log('SMTP not configured. Returning OTP in response for testing.');

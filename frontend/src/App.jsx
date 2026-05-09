@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './utils/NotificationContext';
 import { ChatProvider } from './utils/ChatContext';
+import Landing from './pages/Landing';
 import Splash from './pages/Splash';
 import Welcome from './pages/Welcome';
 import Login from './pages/Login';
@@ -25,6 +26,12 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Subscription from './pages/Subscription';
 
+// Smart root: if user is already logged in, go to /home, else show Landing page
+const RootRedirect = () => {
+  const token = localStorage.getItem('token');
+  return token ? <Navigate to="/home" replace /> : <Landing />;
+};
+
 function App() {
   return (
     <ThemeProvider>
@@ -32,29 +39,30 @@ function App() {
         <NotificationProvider>
           <ChatProvider>
             <Router>
-            <Routes>
-            <Route path="/" element={<Splash />} />
-            <Route path="/verify" element={<Welcome />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/verify-otp" element={<OtpVerify />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/scan" element={<Scan />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/advisory" element={<Advisory />} />
-            <Route path="/weather" element={<Weather />} />
-            <Route path="/pest-id" element={<PestId />} />
-            <Route path="/livestock" element={<Livestock />} />
-            <Route path="/schemes" element={<Schemes />} />
-            <Route path="/mandi" element={<Mandi />} />
-            <Route path="/seed/:id" element={<SeedDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+              <Routes>
+                <Route path="/" element={<RootRedirect />} />
+                <Route path="/splash" element={<Splash />} />
+                <Route path="/verify" element={<Welcome />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/verify-otp" element={<OtpVerify />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/scan" element={<Scan />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/advisory" element={<Advisory />} />
+                <Route path="/weather" element={<Weather />} />
+                <Route path="/pest-id" element={<PestId />} />
+                <Route path="/livestock" element={<Livestock />} />
+                <Route path="/schemes" element={<Schemes />} />
+                <Route path="/mandi" element={<Mandi />} />
+                <Route path="/seed/:id" element={<SeedDetail />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/subscription" element={<Subscription />} />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
             </Router>
           </ChatProvider>
         </NotificationProvider>

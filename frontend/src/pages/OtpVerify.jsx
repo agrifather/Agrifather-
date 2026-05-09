@@ -11,9 +11,13 @@ const OtpVerify = () => {
   const location = useLocation();
 
   // purpose: 'login' | 'forgot-password' | 'register'
-  const { mobile = '', email = '', purpose = 'login' } = location.state || {};
+  const { mobile = '', email = '', purpose = 'login', prefillOtp = '' } = location.state || {};
 
-  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
+  const initialOtp = prefillOtp 
+    ? String(prefillOtp).split('').slice(0, OTP_LENGTH).concat(Array(Math.max(0, OTP_LENGTH - String(prefillOtp).length)).fill(''))
+    : Array(OTP_LENGTH).fill('');
+
+  const [otp, setOtp] = useState(initialOtp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
