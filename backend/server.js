@@ -145,7 +145,10 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
           html: `<h3>Welcome to AgriFather</h3><p>Your OTP is <b>${otp}</b>. It is valid for 5 minutes.</p>`
         });
         console.log('OTP Email sent successfully!');
-        res.status(200).json({ message: 'OTP sent successfully to email' });
+        res.status(200).json({ 
+          message: 'OTP sent successfully to email',
+          otp: process.env.NODE_ENV !== 'production' ? otp : undefined 
+        });
       } catch (mailErr) {
         console.error('Email sending failed:', mailErr);
         res.status(500).json({ message: 'Failed to send OTP email' });
