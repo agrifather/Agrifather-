@@ -36,7 +36,11 @@ const Register = () => {
       const data = await res.json();
       if (res.ok) {
         setOtpSent(true);
-        alert('OTP sent to your email! (Check backend console)');
+        if (data.otp) {
+          alert(`Test Mode: Your OTP is ${data.otp}`);
+        } else {
+          alert('OTP sent to your email! (Check your inbox or spam folder)');
+        }
       } else {
         setError(data.message || 'Failed to send OTP.');
       }

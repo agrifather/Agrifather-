@@ -64,6 +64,9 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
+        if (data.otp) {
+          alert(`Test Mode: Your OTP is ${data.otp}`);
+        }
         navigate('/verify-otp', { state: { email: otpEmail, purpose: 'login' } });
       } else {
         setOtpError(data.message || 'Could not send OTP.');
