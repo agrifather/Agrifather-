@@ -1,0 +1,225 @@
+.notifications-page {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 140px; /* space for filter bar + bottom nav */
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--header-border);
+  background-color: var(--header-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-icon {
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 2px 0;
+}
+
+.header-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #2da84a;
+  cursor: pointer;
+}
+
+.mark-read-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.notifications-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification-card {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background-color: var(--surface-color);
+}
+
+.unread-dot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  background-color: #2da84a;
+  border-radius: 50%;
+}
+
+.notif-icon-container {
+  width: 44px;
+  height: 80px;
+  border-radius: 24px;
+  background-color: var(--surface-2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.notif-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 2px 0;
+  padding-right: 20px; /* space for unread dot */
+}
+
+.notif-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 6px 0;
+}
+
+.notif-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.filter-bar {
+  position: fixed;
+  bottom: 74px; /* above bottom nav */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  background-color: var(--bg-color);
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  border-bottom: 2px solid var(--border-color);
+  z-index: 90;
+  scrollbar-width: none; /* Firefox */
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  background-color: var(--surface-color);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filter-btn.active {
+  background-color: var(--primary-color);
+  color: var(--surface-color);
+  border-color: var(--primary-color);
+}
+
+/* Modal Styles */
+.notif-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.notif-modal-content {
+  background: var(--surface-color);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 10px 25px var(--shadow-color);
+}
+
+.notif-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.notif-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 4px 0;
+}
+
+.notif-modal-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+}
+
+.notif-modal-body p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.notif-modal-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #2da84a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}

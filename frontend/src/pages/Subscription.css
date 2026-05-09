@@ -1,0 +1,681 @@
+/* ── Subscription Page ──────────────────────────────────────────────────────── */
+
+.subscription-page {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  padding-bottom: 100px;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Back Button ─────────────────────────────────────────────────────────────── */
+.sub-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: var(--surface-color);
+  border: 1px solid var(--card-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-back-btn:hover {
+  background: var(--surface-2);
+  transform: scale(1.05);
+}
+
+/* ── Hero Section ────────────────────────────────────────────────────────────── */
+.sub-hero {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 50px 24px 30px;
+}
+
+.sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(45, 168, 74, 0.1);
+  border: 1px solid rgba(45, 168, 74, 0.25);
+  border-radius: 50px;
+  padding: 8px 18px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  letter-spacing: 0.3px;
+  margin-bottom: 18px;
+  animation: badgeFloat 3s ease-in-out infinite;
+}
+
+@keyframes badgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+.sub-hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 8px;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.sub-hero h1 span {
+  color: var(--primary-color);
+}
+
+.sub-hero-desc {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+.sub-hero-hindi {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* ── Plans Container ─────────────────────────────────────────────────────────── */
+.sub-plans {
+  position: relative;
+  z-index: 1;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ── Plan Card Base ──────────────────────────────────────────────────────────── */
+.sub-plan-card {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.sub-plan-card:hover {
+  transform: translateY(-4px);
+}
+
+/* ── Free Plan ───────────────────────────────────────────────────────────────── */
+.sub-plan-free {
+  background: var(--surface-color);
+  border: 1.5px solid var(--card-border);
+  box-shadow: 0 2px 12px var(--shadow-color);
+}
+
+.sub-plan-free:hover {
+  box-shadow: 0 6px 24px var(--shadow-color);
+}
+
+/* ── Pro Monthly ─────────────────────────────────────────────────────────────── */
+.sub-plan-monthly {
+  background: var(--surface-color);
+  border: 1.5px solid var(--primary-color);
+  box-shadow: 0 2px 12px var(--shadow-color);
+}
+
+.sub-plan-monthly:hover {
+  box-shadow: 0 6px 24px rgba(45, 168, 74, 0.15);
+}
+
+/* ── Pro Yearly (Featured) ───────────────────────────────────────────────────── */
+.sub-plan-yearly {
+  background: var(--surface-color);
+  border: 2px solid #daa520;
+  box-shadow: 0 2px 12px var(--shadow-color);
+  position: relative;
+}
+
+.sub-plan-yearly::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: linear-gradient(90deg, #daa520, #ffd700, #daa520);
+  border-radius: 20px 20px 0 0;
+}
+
+.sub-plan-yearly:hover {
+  box-shadow: 0 6px 24px rgba(218, 165, 32, 0.15);
+}
+
+/* Popular badge on yearly */
+.sub-popular-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: linear-gradient(135deg, #daa520, #b8860b);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3);
+}
+
+/* ── Card Inner ──────────────────────────────────────────────────────────────── */
+.sub-plan-inner {
+  padding: 28px 24px;
+}
+
+.sub-plan-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.sub-plan-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 16px;
+}
+
+/* ── Pricing ─────────────────────────────────────────────────────────────────── */
+.sub-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.sub-price-symbol {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.sub-price-amount {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.sub-price-original {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  margin-left: 8px;
+}
+
+.sub-price-period {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sub-savings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(218, 165, 32, 0.1);
+  border: 1px solid rgba(218, 165, 32, 0.25);
+  color: #b8860b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+
+
+/* ── Feature List ────────────────────────────────────────────────────────────── */
+.sub-features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sub-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.sub-feature-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.sub-feature-icon.check {
+  background: rgba(45, 168, 74, 0.12);
+  color: var(--primary-color);
+}
+
+.sub-feature-icon.cross {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+
+
+.sub-feature-item.disabled {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+/* ── CTA Button ──────────────────────────────────────────────────────────────── */
+.sub-cta-wrapper {
+  padding: 0 24px 24px;
+}
+
+.sub-cta-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+}
+
+.sub-cta-free {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.sub-cta-free:hover {
+  background: var(--surface-color);
+  color: var(--text-main);
+  border-color: var(--primary-color);
+}
+
+.sub-cta-pro {
+  background: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(45, 168, 74, 0.25);
+}
+
+.sub-cta-pro:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(45, 168, 74, 0.35);
+}
+
+.sub-cta-yearly {
+  background: linear-gradient(135deg, #daa520, #b8860b);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(218, 165, 32, 0.25);
+}
+
+.sub-cta-yearly:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(218, 165, 32, 0.35);
+}
+
+.sub-cta-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ── Loading spinner on button ───────────────────────────────────────────────── */
+.sub-cta-btn .spin-icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer Note ─────────────────────────────────────────────────────────────── */
+.sub-footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 28px 24px 16px;
+}
+
+.sub-footer p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+/* ── Subscription active banner ──────────────────────────────────────────────── */
+.sub-active-banner {
+  position: relative;
+  z-index: 1;
+  margin: 0 16px 20px;
+  background: rgba(45, 168, 74, 0.08);
+  border: 1.5px solid rgba(45, 168, 74, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+}
+
+.sub-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(45, 168, 74, 0.12);
+  border-radius: 50px;
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 12px;
+}
+
+.sub-active-banner h3 {
+  color: var(--text-main);
+  font-size: 1.15rem;
+  margin: 0 0 6px;
+}
+
+.sub-active-banner p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ── Token Expired Modal Overlay (used in Scan page) ─────────────────────────── */
+.token-expired-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.token-expired-card {
+  background: var(--surface-color);
+  border: 1.5px solid var(--card-border);
+  border-radius: 24px;
+  padding: 32px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.4s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.token-expired-card .expired-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.08);
+  border: 2px solid rgba(239, 68, 68, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 1.6rem;
+}
+
+.token-expired-card h3 {
+  color: var(--text-main);
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+}
+
+.token-expired-card p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+.token-expired-card .reset-timer {
+  color: #daa520;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+
+.token-expired-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.token-expired-actions .upgrade-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(45, 168, 74, 0.25);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.token-expired-actions .upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(45, 168, 74, 0.35);
+}
+
+.token-expired-actions .dismiss-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.token-expired-actions .dismiss-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────────── */
+.sub-divider {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 24px;
+  margin: 4px 0;
+}
+
+.sub-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.sub-divider-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Secure payment text ─────────────────────────────────────────────────────── */
+.sub-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+/* ── Profile Subscription Card ───────────────────────────────────────────────── */
+.profile-sub-card {
+  background: var(--surface-color);
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-sub-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-sub-icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(45, 168, 74, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--primary-color);
+}
+
+.profile-sub-info {
+  flex: 1;
+}
+
+.profile-sub-info .sub-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 2px;
+}
+
+.profile-sub-info .sub-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.profile-sub-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.profile-sub-status.active {
+  background: rgba(45, 168, 74, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(45, 168, 74, 0.2);
+}
+
+.profile-sub-status.free {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+
+
+.profile-upgrade-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(45, 168, 74, 0.2);
+}
+
+.profile-upgrade-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(45, 168, 74, 0.3);
+}
+
+.profile-upgrade-btn.subscribed {
+  background: var(--surface-2);
+  color: var(--primary-color);
+  border: 1.5px solid var(--primary-color);
+  box-shadow: none;
+}
+
+.profile-sub-expiry {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}

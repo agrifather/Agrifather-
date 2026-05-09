@@ -1,0 +1,120 @@
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 100vh;
+  padding: 60px 24px 30px;
+  background-color: var(--bg-color);
+  position: relative;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.icon-wrapper {
+  background-color: #e8f5e9;
+  border: 2px solid var(--card-border);
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.brand-name {
+  color: var(--primary-color);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.verify-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 32px 24px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(45, 168, 74, 0.08);
+}
+
+.verify-card h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.highlight {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.otp-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.otp-input {
+  width: 60px;
+  height: 60px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border-radius: 16px;
+  background-color: var(--input-bg);
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+}
+
+.otp-input:focus {
+  border-color: var(--primary-color);
+  background-color: #e8f5e9;
+  box-shadow: 0 0 0 3px rgba(45, 168, 74, 0.1);
+}
+
+.resend-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  font-size: 0.85rem;
+}
+
+.timer {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resend-btn {
+  background: none;
+  color: var(--primary-color);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.footer-text {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  margin-top: 40px;
+}

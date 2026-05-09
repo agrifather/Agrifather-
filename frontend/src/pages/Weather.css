@@ -1,0 +1,397 @@
+/* ── Weather Page ─────────────────────────────────────────────────────────── */
+.weather-page {
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.weather-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 12px;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.weather-header .back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  background: var(--surface-color);
+  flex-shrink: 0;
+}
+
+.weather-header-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.weather-header-title span {
+  color: var(--primary-color);
+}
+
+/* Scrollable body */
+.weather-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Location Search ── */
+.weather-search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.weather-search-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border-color);
+  background: var(--surface-color);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.weather-search-bar input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(45, 168, 74, 0.1);
+}
+
+.weather-search-bar button {
+  padding: 11px 20px;
+  border-radius: 50px;
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.weather-search-bar button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.weather-search-bar button:disabled {
+  background: #9dcfaa;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Hero Card ── */
+.weather-hero {
+  background: linear-gradient(135deg, #52c17a 0%, #3aaa60 40%, #2b8f50 100%);
+  border-radius: 20px;
+  padding: 32px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(45, 168, 74, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+
+.weather-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -30px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+
+.weather-hero-icon {
+  font-size: 4rem;
+  line-height: 1;
+  z-index: 1;
+}
+
+.weather-hero-temp {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  z-index: 1;
+}
+
+.weather-hero-location {
+  font-size: 0.95rem;
+  opacity: 0.88;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+
+.weather-hero-condition {
+  font-size: 1.05rem;
+  font-weight: 500;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+/* ── Farming Advice Card ── */
+.weather-advice-card {
+  background: var(--surface-color);
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.weather-advice-card .advice-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.advice-icon {
+  font-size: 1.4rem;
+}
+
+.advice-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.advice-hi {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.advice-en {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ── Stats Grid ── */
+.weather-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.weather-stat-card {
+  background: var(--surface-color);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'Tiro Devanagari Hindi', serif;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ── Section titles ── */
+.weather-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+/* ── Hourly Forecast ── */
+.hourly-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hourly-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+.hourly-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.hourly-card {
+  flex-shrink: 0;
+  background: var(--surface-color);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 70px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hourly-card.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 10px rgba(45, 168, 74, 0.15);
+}
+
+.hourly-time {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.hourly-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.hourly-temp {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ── 7-Day Forecast ── */
+.forecast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forecast-row {
+  background: var(--surface-color);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.forecast-day-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 44px;
+}
+
+.forecast-day-hi {
+  font-family: 'Tiro Devanagari Hindi', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.forecast-day-en {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.forecast-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.forecast-condition {
+  flex: 1;
+  font-size: 0.93rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.forecast-temps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.forecast-high {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.forecast-low {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── Loading & Error states ── */
+.weather-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+  color: var(--primary-color);
+}
+
+.weather-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.weather-error {
+  text-align: center;
+  color: #ef4444;
+  padding: 40px 20px;
+  font-size: 0.95rem;
+}

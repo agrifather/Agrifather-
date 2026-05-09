@@ -1,0 +1,253 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Sun, Moon, Globe, Volume2, MessageSquare, Bell, Shield, HelpCircle, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import BottomNav from '../components/BottomNav';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getUserItem, setUserItem } from '../utils/userStorage';
+import './Settings.css';
+
+const Settings = () => {
+  const navigate = useNavigate();
+  const { darkMode, toggleTheme, setDarkMode } = useTheme();
+  const { t, langLabel, setLang } = useLanguage();
+
+  const [voiceMode, setVoiceMode]           = useState(() => getUserItem('af_voiceMode') !== 'false');
+  const [notifications, setNotifications]  = useState(() => getUserItem('af_notifications') !== 'false');
+  const [responseStyle, setResponseStyle]   = useState(() => getUserItem('af_responseStyle', 'Detailed'));
+  const [modal, setModal]                   = useState(null); // 'privacy' | 'help' | null
+
+  useEffect(() => { setUserItem('af_voiceMode', voiceMode); }, [voiceMode]);
+  useEffect(() => { setUserItem('af_notifications', notifications); }, [notifications]);
+  useEffect(() => { setUserItem('af_responseStyle', responseStyle); }, [responseStyle]);
+
+  const Toggle = ({ on, onChange }) => (
+    <div className={`toggle-switch ${on ? 'on' : ''}`} onClick={() => onChange(!on)} role="switch" aria-checked={on}>
+      <div className="toggle-knob" />
+    </div>
+  );
+
+  return (
+    <div className="settings-page">
+      <div className="settings-header">
+        <ArrowLeft size={24} className="back-icon" onClick={() => navigate(-1)} />
+        <h2 className="header-title hindi-text">{t('settings')}</h2>
+      </div>
+
+      <div className="settings-content">
+
+        {/* APPEARANCE */}
+        <div className="settings-section">
+          <h3 className="section-heading hindi-text">{t('appearance')}</h3>
+          <div className={`setting-card active-card`}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                {darkMode ? <Moon size={20} color="#2da84a" /> : <Sun size={20} color="#2da84a" />}
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('theme')}</h4>
+                <p className="setting-subtitle">{darkMode ? t('darkMode') : t('lightMode')}</p>
+              </div>
+            </div>
+            <div className="setting-right">
+              <Toggle on={darkMode} onChange={setDarkMode} />
+            </div>
+          </div>
+        </div>
+
+        {/* PREFERENCES */}
+        <div className="settings-section">
+          <h3 className="section-heading hindi-text">{t('preferences')}</h3>
+
+          {/* Language */}
+          <div className="setting-card">
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Globe size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('language')}</h4>
+                <p className="setting-subtitle">{t('appLang')}</p>
+              </div>
+            </div>
+            <div className="setting-right">
+              <select
+                className="settings-select"
+                value={langLabel}
+                onChange={(e) => setLang(e.target.value)}
+              >
+                <option value="Hindi">Hindi</option>
+                <option value="English">English</option>
+                <option value="Marathi">Marathi</option>
+                <option value="Punjabi">Punjabi</option>
+                <option value="Gujarati">Gujarati</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Voice Mode */}
+          <div className="setting-card">
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Volume2 size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('voiceMode')}</h4>
+                <p className="setting-subtitle">{voiceMode ? t('voiceEnabled') : t('voiceDisabled')}</p>
+              </div>
+            </div>
+            <div className="setting-right">
+              <Toggle on={voiceMode} onChange={setVoiceMode} />
+            </div>
+          </div>
+
+          {/* Response Style */}
+          <div className="setting-card">
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <MessageSquare size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('responseStyle')}</h4>
+                <p className="setting-subtitle">{t('aiLength')}</p>
+              </div>
+            </div>
+            <div className="setting-right">
+              <select
+                className="settings-select"
+                value={responseStyle}
+                onChange={(e) => setResponseStyle(e.target.value)}
+              >
+                <option value="Brief">Brief</option>
+                <option value="Detailed">Detailed</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* NOTIFICATIONS */}
+        <div className="settings-section">
+          <h3 className="section-heading hindi-text">{t('notifications')}</h3>
+          <div className="setting-card">
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Bell size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('pushNotif')}</h4>
+                <p className="setting-subtitle">{t('alertsUpdates')}</p>
+              </div>
+            </div>
+            <div className="setting-right">
+              <Toggle on={notifications} onChange={setNotifications} />
+            </div>
+          </div>
+        </div>
+
+        {/* SUPPORT */}
+        <div className="settings-section">
+          <h3 className="section-heading hindi-text">{t('support')}</h3>
+
+          <div className="setting-card setting-card-btn" onClick={() => setModal('privacy')}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Shield size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('privacyPolicy')}</h4>
+                <p className="setting-subtitle">{t('readPrivacy')}</p>
+              </div>
+            </div>
+            <span className="setting-arrow">›</span>
+          </div>
+
+          <div className="setting-card setting-card-btn" onClick={() => setModal('help')}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <HelpCircle size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">{t('helpSupport')}</h4>
+                <p className="setting-subtitle">{t('faqContact')}</p>
+              </div>
+            </div>
+            <span className="setting-arrow">›</span>
+          </div>
+          <div className="setting-card setting-card-btn" onClick={() => setModal('grievance')}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Shield size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">Grievance Redressal</h4>
+                <p className="setting-subtitle">Contact Grievance Officer</p>
+              </div>
+            </div>
+            <span className="setting-arrow">›</span>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <button 
+            className="logout-btn" 
+            onClick={() => {
+              localStorage.removeItem('user');
+              navigate('/login');
+            }}
+          >
+            {t('logout')}
+          </button>
+        </div>
+
+        <div className="footer-credits">
+          <p>AgriFather v1.0.0</p>
+          <p>Made with 🌾 for Indian Farmers</p>
+        </div>
+      </div>
+
+      <BottomNav />
+
+      {/* ── Modal ── */}
+      {modal && (
+        <div className="settings-modal-overlay" onClick={() => setModal(null)}>
+          <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setModal(null)}>
+              <X size={20} />
+            </button>
+            {modal === 'privacy' && (
+              <>
+                <h3>{t('privacyPolicy')}</h3>
+                <p>AgriFather collects only the information you provide (name, mobile number, crop preference) to personalise your farming experience. Your data is never sold to third parties.</p>
+                <p>All AI conversations are processed via OpenRouter and are not stored on our servers beyond the current session.</p>
+                <p>For queries, contact: <strong>support@agrifather.in</strong></p>
+              </>
+            )}
+            {modal === 'help' && (
+              <>
+                <h3>{t('helpSupport')}</h3>
+                <p><strong>Q: How do I scan my crop?</strong><br />Go to the Scanner tab, tap Camera or Gallery, select an image, then tap "Analyze with AI".</p>
+                <p><strong>Q: How does OTP login work?</strong><br />Enter your registered mobile number and tap "Login with OTP".</p>
+                <p><strong>Q: Who do I contact for help?</strong><br />Email us at <strong>support@agrifather.in</strong> or call <strong>1800-XXX-XXXX</strong>.</p>
+              </>
+            )}
+            {modal === 'grievance' && (
+              <>
+                <h3>Grievance Redressal / शिकायत निवारण</h3>
+                <p>In accordance with Information Technology Act, 2000 and rules made there under, the name and contact details of the Grievance Officer are provided below:</p>
+                <div style={{ background: 'var(--card-bg)', padding: '12px', borderRadius: '8px', marginTop: '12px', border: '1px solid var(--border-color)' }}>
+                  <p><strong>Name:</strong> Mr. Sharma</p>
+                  <p><strong>Email:</strong> grievance@agrifather.in</p>
+                  <p><strong>Phone:</strong> 1800-XXX-XXXX (Mon-Fri, 9AM-6PM)</p>
+                  <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>We acknowledge all grievances within 24 hours and resolve them within 15 days.</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Settings;
