@@ -453,15 +453,8 @@ function isAgricultureRelated(text) {
     'who will win','who won','match result','live score',
   ];
 
-  // If any blocked keyword matches — immediately reject
-  for (const kw of blockedKeywords) {
-    if (lower.includes(kw)) return false;
-  }
-
-  // Allow all other queries through to the AI.
-  // The LLM system prompt will handle filtering out non-agricultural topics,
-  // ensuring that questions in Marathi, Punjabi, Gujarati, etc. are not blocked
-  // just because they lack specific English/Hindi keywords.
+  // Removing blockedKeywords filter to prevent false positives (like "tractor loan")
+  // Let the LLM handle all topic moderation.
   return true;
 }
 
