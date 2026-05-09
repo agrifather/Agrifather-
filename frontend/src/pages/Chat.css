@@ -210,15 +210,18 @@
 
 /* User — neutral pill */
 .user-bubble {
-  background: #e8f5e9;
-  border: 1px solid var(--card-border);
+  background: #1a1a1a;
+  border: none;
   border-radius: 18px 18px 4px 18px;
   padding: 12px 18px;
-  color: var(--text-main);
+  color: #ffffff;
   max-width: 72%;
   font-size: 0.95rem;
   line-height: 1.6;
-  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+[data-theme="dark"] .user-bubble {
+  background: #383838;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
