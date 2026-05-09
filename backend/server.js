@@ -458,16 +458,11 @@ function isAgricultureRelated(text) {
     if (lower.includes(kw)) return false;
   }
 
-  // If any agriculture keyword matches — allow
-  for (const kw of agriKeywords) {
-    if (lower.includes(kw)) return true;
-  }
-
-  // Short messages (greetings etc.) — allow through to AI
-  if (text.trim().split(/\s+/).length <= 4) return true;
-
-  // Default: block if nothing matches
-  return false;
+  // Allow all other queries through to the AI.
+  // The LLM system prompt will handle filtering out non-agricultural topics,
+  // ensuring that questions in Marathi, Punjabi, Gujarati, etc. are not blocked
+  // just because they lack specific English/Hindi keywords.
+  return true;
 }
 
 // ── OpenRouter: Chat ──────────────────────────────────────────────────────────────
