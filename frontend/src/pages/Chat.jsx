@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Leaf, Loader, Trash2, Camera, ArrowUp, Crown, Mic, MicOff, Zap, BookOpen, GraduationCap } from 'lucide-react';
+import { Send, Leaf, Loader, Trash2, Camera, ArrowUp, Crown, Mic, MicOff, Zap, BookOpen, GraduationCap, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { loadHistory, appendMessages, clearHistory } from '../utils/chatHistory';
@@ -102,6 +102,7 @@ const Chat = () => {
   const [responseStyle, setResponseStyle] = useState(() => getUserItem('af_responseStyle', 'Detailed'));
   const [isListening, setIsListening] = useState(false);
   const [micError, setMicError] = useState('');
+  const [feedback, setFeedback] = useState({}); // { [msgId]: 'up' | 'down' }
   const messagesEndRef   = useRef(null);
   const messagesAreaRef  = useRef(null);
   const inputRef         = useRef(null);
@@ -368,6 +369,34 @@ const Chat = () => {
                 ? <FormatText text={msg.text} />
                 : <div className="bubble-content"><p className="md-p">{msg.text}</p></div>
               }
+              {/* Feedback row — only for AI messages */}
+              {msg.role === 'ai' && (
+                <div className="ai-feedback-row">
+                  {feedback[msg.id] ? (
+                    <span className="feedback-thanks">
+                      {feedback[msg.id] === 'up' ? '✅ Thanks for the feedback!' : '🙏 We\'ll improve!'}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="feedback-label">Was this helpful?</span>
+                      <button
+                        className="feedback-btn feedback-up"
+                        onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: 'up' }))}
+                        title="Helpful"
+                      >
+                        <ThumbsUp size={14} />
+                      </button>
+                      <button
+                        className="feedback-btn feedback-down"
+                        onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: 'down' }))}
+                        title="Not helpful"
+                      >
+                        <ThumbsDown size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             {msg.role === 'user' && (
               <div className="message-avatar user-avatar">{userInitial}</div>

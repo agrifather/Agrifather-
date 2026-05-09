@@ -235,6 +235,78 @@
   color: #000000;
 }
 
+/* ── AI Feedback Row ── */
+.ai-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color, rgba(0,0,0,0.07));
+  flex-wrap: wrap;
+}
+
+.feedback-label {
+  font-size: 0.78rem;
+  color: var(--text-muted, #9ca3af);
+  margin-right: 2px;
+  letter-spacing: 0.01em;
+}
+
+.feedback-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted, #9ca3af);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.feedback-btn:hover {
+  transform: scale(1.15);
+}
+
+.feedback-up:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #16a34a;
+}
+
+.feedback-down:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #dc2626;
+}
+
+[data-theme="dark"] .feedback-btn {
+  border-color: #3a3a3a;
+  color: #6b7280;
+}
+
+[data-theme="dark"] .feedback-up:hover {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
+[data-theme="dark"] .feedback-down:hover {
+  background: #7f1d1d;
+  border-color: #f87171;
+  color: #fca5a5;
+}
+
+.feedback-thanks {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  animation: fadeSlideIn 0.25s ease-out;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MARKDOWN RENDERING
 ═══════════════════════════════════════════════════════════════════════════ */
