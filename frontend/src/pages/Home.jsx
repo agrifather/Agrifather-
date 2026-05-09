@@ -43,21 +43,55 @@ const Home = () => {
     setRecentChats(getRecentConversations(5));
   }, []);
 
-  // Location + weather
+  // Location detection
   useEffect(() => {
     let currentLoc = locationStr;
     if (!currentLoc) {
-      const userInput = window.prompt('Please enter your City or Village name to show local weather:', 'Nagpur');
-      currentLoc = userInput || 'Nagpur, Maharashtra';
-      setLocationStr(currentLoc);
-      setUserItem('af_location', currentLoc);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await res.json();
+              const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Unknown Location';
+              const state = data.address.state || '';
+              const detectedLoc = `${city}${state ? `, ${state}` : ''}`;
+              
+              setLocationStr(detectedLoc);
+              setUserItem('af_location', detectedLoc);
+            } catch (err) {
+              console.error('Reverse geocoding failed:', err);
+              fallbackPrompt();
+            }
+          },
+          (err) => {
+            console.error('Geolocation error:', err);
+            fallbackPrompt();
+          }
+        );
+      } else {
+        fallbackPrompt();
+      }
     }
 
-    const locLower = currentLoc.toLowerCase();
+    function fallbackPrompt() {
+      const userInput = window.prompt('Please enter your City or Village name to show local weather:', 'Nagpur');
+      const loc = userInput || 'Nagpur, Maharashtra';
+      setLocationStr(loc);
+      setUserItem('af_location', loc);
+    }
+  }, []);
+
+  // Weather fetching
+  useEffect(() => {
+    if (!locationStr) return;
+    
+    const locLower = locationStr.toLowerCase();
     const isHighRisk = ['rajasthan', 'gujarat', 'punjab', 'haryana'].some(state => locLower.includes(state));
     setAlertVisible(isHighRisk);
 
-    fetch(`https://wttr.in/${encodeURIComponent(currentLoc)}?format=j1`)
+    fetch(`https://wttr.in/${encodeURIComponent(locationStr)}?format=j1`)
       .then(res  => res.json())
       .then(data => {
         const temp = data.current_condition[0].temp_C;

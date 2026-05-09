@@ -4,40 +4,40 @@
 :root,
 [data-theme="light"] {
   --bg-color:       #ffffff;
-  --bg-secondary:   #f5faf5;
+  --bg-secondary:   #f9f9f9;
   --surface-color:  #ffffff;
-  --surface-2:      #f0f9f0;
-  --primary-color:  #2da84a;
-  --primary-dark:   #1e7a35;
-  --text-main:      #1f2937;
-  --text-muted:     #6b7280;
-  --input-bg:       #f5faf5;
-  --border-color:   #d4ecd8;
-  --card-border:    #c8e6cc;
+  --surface-2:      #f4f4f4;
+  --primary-color:  #10a37f;
+  --primary-dark:   #1a7f64;
+  --text-main:      #0d0d0d;
+  --text-muted:     #5e5e5e;
+  --input-bg:       #ffffff;
+  --border-color:   #e5e5e5;
+  --card-border:    #e5e5e5;
   --error-color:    #ef4444;
-  --header-bg:      #f8fdf8;
-  --header-border:  #d4ecd8;
+  --header-bg:      #ffffff;
+  --header-border:  #e5e5e5;
   --nav-bg:         #ffffff;
-  --shadow-color:   rgba(45, 168, 74, 0.08);
+  --shadow-color:   rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="dark"] {
-  --bg-color:       #0f172a;
-  --bg-secondary:   #1e293b;
-  --surface-color:  #1e293b;
-  --surface-2:      #273449;
-  --primary-color:  #4ade80;
-  --primary-dark:   #22c55e;
-  --text-main:      #f1f5f9;
-  --text-muted:     #94a3b8;
-  --input-bg:       #273449;
-  --border-color:   #334155;
-  --card-border:    #2d4a3e;
-  --error-color:    #f87171;
-  --header-bg:      #1e293b;
-  --header-border:  #334155;
-  --nav-bg:         #1e293b;
-  --shadow-color:   rgba(0,0,0,0.4);
+  --bg-color:       #212121;
+  --bg-secondary:   #171717;
+  --surface-color:  #2f2f2f;
+  --surface-2:      #171717;
+  --primary-color:  #10a37f;
+  --primary-dark:   #1a7f64;
+  --text-main:      #ececec;
+  --text-muted:     #9b9b9b;
+  --input-bg:       #2f2f2f;
+  --border-color:   #4d4d4d;
+  --card-border:    #4d4d4d;
+  --error-color:    #ef4444;
+  --header-bg:      #212121;
+  --header-border:  #4d4d4d;
+  --nav-bg:         #212121;
+  --shadow-color:   rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -347,4 +347,36 @@ html, body, #root {
 [data-theme="dark"] .response-style-bar {
   background-color: var(--surface-2) !important;
   border-color: var(--border-color) !important;
+}
+
+/* ── Global Toggle Switch ── */
+.toggle-switch {
+  width: 48px;
+  height: 26px;
+  border-radius: 100px;
+  background: #d1d5db;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.25s;
+  flex-shrink: 0;
+}
+
+.toggle-switch.on {
+  background: var(--primary-color);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch.on .toggle-knob {
+  transform: translateX(22px);
 }

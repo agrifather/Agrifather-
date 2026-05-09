@@ -124,37 +124,7 @@
   line-height: 1;
 }
 
-/* ── Toggle ─────────────────────────────────────────────────────────────────── */
-.toggle-switch {
-  width: 48px;
-  height: 26px;
-  background-color: #d1d5db;
-  border-radius: 13px;
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.25s;
-  flex-shrink: 0;
-}
 
-.toggle-switch.on {
-  background-color: var(--primary-color);
-}
-
-.toggle-knob {
-  width: 22px;
-  height: 22px;
-  background-color: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.25s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.toggle-switch.on .toggle-knob {
-  transform: translateX(22px);
-}
 
 /* ── Select ─────────────────────────────────────────────────────────────────── */
 .settings-select {
