@@ -493,115 +493,110 @@ app.post('/api/chat', async (req, res) => {
     const { message, history = [], responseStyle = 'Detailed', language = 'Hindi' } = req.body;
     if (!message) return res.status(400).json({ message: 'Message is required' });
 
-    // Response style instructions
-    let styleNote = '';
-    if (responseStyle === 'Brief') {
-      styleNote = 'Give a SHORT answer in 3-4 sentences max with bullet points.';
-    } else if (responseStyle === 'Expert') {
-      styleNote = 'Give an EXPERT-LEVEL answer with scientific names, exact dosages, and technical details.';
-    } else {
-      styleNote = 'Give a DETAILED, comprehensive answer covering all important aspects.';
-    }
-
-    // ── TRICK: Inject the role as the first assistant message to "warm up" the model
-    // This prevents models from triggering their built-in refusal patterns.
-    const systemPrompt = `You are AgriFather, an agricultural expert assistant for Indian farmers. Answer questions about farming, crops, seeds, soil, fertilizers, pesticides, irrigation, fruits, vegetables, trees, plant diseases, mandi prices, government schemes, and livestock. Reply in the same language the user uses. ${styleNote}`;
+    let styleNote = 'Give a detailed, helpful answer.';
+    if (responseStyle === 'Brief') styleNote = 'Keep your answer brief — 3 to 4 sentences with bullet points.';
+    if (responseStyle === 'Expert') styleNote = 'Give a technical, expert-level answer with scientific terms and exact dosages.';
 
     const mandiContext = await fetchMandiRatesContext(message);
+    const userContent = mandiContext ? `${message}\n\n[Live market data: ${mandiContext}]` : message;
 
-    // Build messages with an injected "priming" assistant turn
+    // KEY FIX: Use a completely neutral system prompt without brand name.
+    // Models hallucinate refusals because they were trained on similar branded apps.
+    // A neutral prompt bypasses this training artifact entirely.
+    const systemPrompt = `You are an expert agricultural assistant for Indian farmers.
+You ONLY answer questions about: crops, farming, seeds, soil, fertilizers, pesticides, irrigation,
+fruits, vegetables, plant diseases and solutions, farming tools, mandi prices, weather effects on farming,
+government farm schemes (PM Kisan, PMFBY, KCC), livestock, and horticulture.
+
+RULES:
+- ALWAYS answer farming questions. NEVER refuse.
+- Reply in the SAME language the user writes in (Hindi, Marathi, English, Punjabi, Gujarati, etc.).
+- If completely off-topic (movies/sports/coding), say you only cover farming.
+- ${styleNote}
+- Use bold for key terms, bullet points for steps, headings for long answers. End with a farming emoji.`;
+
     const chatMessages = [
       { role: 'system', content: systemPrompt },
-      // Warm-up: inject a prior assistant message so model adopts the persona immediately
-      { role: 'user', content: 'Who are you?' },
-      { role: 'assistant', content: 'Namaskar! Main AgriFather AI hoon — aapka kisan sahayak. Mujhse kheti, fasal, beej, khad, keetnashak, mandi bhav, ya koi bhi krishi samasya ke baare mein poochh sakte hain. Aap English ya Hindi mein poochh sakte hain. 🌾' },
+      { role: 'user', content: 'Aap kya kar sakte hain?' },
+      { role: 'assistant', content: 'Main ek krishi visheshagya hoon. Fasal, beej, mitti, khad, keeda, mandi bhav, sarkari yojana — sab poochh sakte ho. 🌾' },
       ...history.map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.text
       })),
-      { 
-        role: 'user', 
-        content: mandiContext 
-          ? `${message}\n\n[Context: ${mandiContext}]` 
-          : message 
-      }
+      { role: 'user', content: userContent }
     ];
 
-    const modelsToTry = [
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'meta-llama/llama-3.2-3b-instruct:free',
-      'qwen/qwen-2-7b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
-      'google/gemma-2-9b-it:free',
-      'google/gemma-3-4b-it:free',
-    ];
-
-    // Phrases that indicate the model is refusing/hallucinating its persona
     const refusalPhrases = [
       'my expertise lies in agriculture',
-      'i\'m happy to chat with you, but',
-      'as your agrifather, my expertise',
+      "i'm happy to chat with you, but",
       'not in topics like the one you asked',
-      'i cannot help with this',
+      'as your agrifather',
+      "my dear friend, i'm happy",
+      "i'm not able to assist",
+      'outside the scope',
+      "i'm only able to answer",
+      "i can't help with",
     ];
 
     const isRefusal = (text) => {
+      if (!text || text.trim().length < 10) return true;
       const lower = text.toLowerCase();
       return refusalPhrases.some(p => lower.includes(p));
     };
 
-    const callModel = async (model, msgs) => {
+    const callModel = async (model, msgs, temp = 0.5) => {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
-          'X-Title': 'AgriFather AI'
+          'X-Title': 'AgriFather'
         },
-        body: JSON.stringify({
-          model,
-          messages: msgs,
-          temperature: 0.5,
-          max_tokens: 1024
-        })
+        body: JSON.stringify({ model, messages: msgs, temperature: temp, max_tokens: 1024 })
       });
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`Status ${response.status}: ${errText}`);
+        throw new Error(`${response.status}: ${errText.slice(0, 200)}`);
       }
       const data = await response.json();
-      if (data.choices && data.choices[0]) {
-        return data.choices[0].message.content;
-      }
-      throw new Error('No choices in response');
+      if (data.choices && data.choices[0]) return data.choices[0].message.content;
+      throw new Error('Empty response from model');
     };
+
+    const modelsToTry = [
+      'meta-llama/llama-3.3-70b-instruct:free',       // Best: 70B, excellent instruction following
+      'openai/gpt-oss-120b:free',                      // GPT-class large model
+      'openai/gpt-oss-20b:free',                       // GPT-class medium model
+      'qwen/qwen3-next-80b-a3b-instruct:free',         // Qwen3 80B
+      'google/gemma-4-26b-a4b-it:free',                // Gemma4 26B
+      'meta-llama/llama-3.2-3b-instruct:free',         // Fallback small model
+    ];
 
     let reply = null;
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
-        console.log(`Trying model: ${model}`);
+        console.log(`[Chat] Trying: ${model}`);
         let text = await callModel(model, chatMessages);
 
-        // If model is refusing, retry with a stronger direct instruction
         if (isRefusal(text)) {
-          console.warn(`Model ${model} returned refusal. Retrying with override...`);
+          console.warn(`[Chat] Refusal from ${model}, retrying with direct override...`);
           const overrideMsgs = [
-            { role: 'system', content: `You are a helpful farming assistant. The user asked: "${message}". Answer this farming question directly and helpfully in ${language}. Do not refuse. Just answer.` },
+            { role: 'system', content: `You are a farming expert. Answer this question about farming in ${language}: "${message}"` },
             { role: 'user', content: message }
           ];
-          text = await callModel(model, overrideMsgs);
+          text = await callModel(model, overrideMsgs, 0.3);
         }
 
         if (text && !isRefusal(text)) {
           reply = text;
-          console.log(`Success with model: ${model}`);
+          console.log(`[Chat] Success: ${model}`);
           break;
         }
       } catch (err) {
-        console.error(`OpenRouter error for ${model}:`, err.message);
+        console.error(`[Chat] Error for ${model}:`, err.message);
         lastError = err;
       }
     }
@@ -609,17 +604,16 @@ app.post('/api/chat', async (req, res) => {
     if (reply) {
       res.status(200).json({ reply });
     } else {
-      console.error('All providers failed. Last error:', lastError?.message);
-      res.status(500).json({ message: 'AI is temporarily unavailable. Please try again in a moment.' });
+      res.status(500).json({ message: 'AI service is temporarily unavailable. Please try again in a moment.' });
     }
   } catch (err) {
-    console.error('OpenRouter chat error:', err.message);
-    res.status(500).json({ message: 'AI error: ' + (err.message || 'Unknown error') });
+    console.error('[Chat] Unhandled error:', err.message);
+    res.status(500).json({ message: 'Server error: ' + err.message });
   }
 });
 
-
 // ── OpenRouter: Scan (image analysis via vision model) ─────────────────────────────────────────────
+
 // POST /api/scan  multipart/form-data  { image: File, question?: string }
 app.post('/api/scan', upload.single('image'), async (req, res) => {
   try {
