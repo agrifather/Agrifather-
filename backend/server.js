@@ -494,125 +494,114 @@ app.post('/api/chat', async (req, res) => {
     if (!message) return res.status(400).json({ message: 'Message is required' });
 
     // Response style instructions
-    let styleInstruction = '';
+    let styleNote = '';
     if (responseStyle === 'Brief') {
-      styleInstruction = `\n\n## RESPONSE STYLE: BRIEF
-- Keep your answer very short and concise — maximum 3-4 sentences.
-- Give only the most essential information.
-- Use bullet points for quick readability.
-- No lengthy explanations or background info.`;
+      styleNote = 'Give a SHORT answer in 3-4 sentences max with bullet points.';
     } else if (responseStyle === 'Expert') {
-      styleInstruction = `\n\n## RESPONSE STYLE: EXPERT
-- Answer like a world-class agricultural scientist/expert.
-- Provide a extremely detailed and technical answer covering EVERY aspect of the topic.
-- Include scientific names, chemical compositions, exact dosage rates, and technical parameters.
-- Reference the latest agricultural research and global best practices.
-- Use advanced vocabulary and professional formatting with multiple sections.
-- Leave no detail unexplored.`;
+      styleNote = 'Give an EXPERT-LEVEL answer with scientific names, exact dosages, and technical details.';
     } else {
-      // Default: Detailed
-      styleInstruction = `\n\n## RESPONSE STYLE: DETAILED
-- Provide an extremely thorough and comprehensive answer.
-- You MUST cover the following aspects of the topic:
-  1. **Past**: Historical context or how this issue developed.
-  2. **Present**: The current status, symptoms, and immediate impact.
-  3. **Future**: Long-term outlook, potential risks, and future prevention.
-  4. **Positives**: Any beneficial aspects or opportunities (if applicable).
-  5. **Negatives**: Risks, drawbacks, and potential damages.
-- Use headings for each of these sections.
-- Balance technical depth with practical farmer-friendly advice.`;
+      styleNote = 'Give a DETAILED, comprehensive answer covering all important aspects.';
     }
 
-    let systemPrompt = `You are AgriFather AI — a warm, expert agricultural assistant built for Indian farmers.
-
-Your job is to help farmers with:
-- Crops, seeds, soil, fertilizers, pesticides, irrigation, farming tools and machinery
-- Fruits, vegetables, trees, plants, their diseases and treatment/solutions
-- Mandi rates, market prices, crop selling guidance
-- Weather and its effect on farming decisions
-- Government schemes: PM Kisan, PMFBY, Kisan Credit Card, subsidies, loans
-- Livestock, dairy, poultry, fisheries, horticulture, organic farming
-- Any question related to agriculture or farming in ANY language (Hindi, Marathi, Punjabi, Gujarati, English, etc.)
-
-IMPORTANT RULES:
-1. ALWAYS answer farming/agriculture questions fully and helpfully regardless of what language the user uses.
-2. If someone asks something completely unrelated to farming (e.g. movies, cricket, coding), gently say you only cover farming topics and ask if they have a farm-related question.
-3. NEVER refuse a farming question. Never say you cannot help if the question is about plants, crops, farming tools, disease, mandi prices, or agriculture.
-4. Reply in the SAME language the user wrote in. If they wrote in Hindi, reply in Hindi. If English, reply in English.
-5. Be practical, warm and farmer-friendly. Use simple language.
-
-${styleInstruction}
-
-## Formatting:
-- Use **bold** for key terms and crop names
-- Use bullet points for steps and lists
-- Use ## headings for multi-section answers
-- End with a helpful farming emoji 🌾🌱🚜🌻
-
-## Language Override:
-- The user has selected ${language} as their preferred language for detailed explanations.
-- If the user's message is in a different language, reply in THAT language first, then add a brief ${language} summary.
-
-Keep answers practical, actionable, and farmer-friendly.`;
+    // ── TRICK: Inject the role as the first assistant message to "warm up" the model
+    // This prevents models from triggering their built-in refusal patterns.
+    const systemPrompt = `You are AgriFather, an agricultural expert assistant for Indian farmers. Answer questions about farming, crops, seeds, soil, fertilizers, pesticides, irrigation, fruits, vegetables, trees, plant diseases, mandi prices, government schemes, and livestock. Reply in the same language the user uses. ${styleNote}`;
 
     const mandiContext = await fetchMandiRatesContext(message);
-    if (mandiContext) {
-      systemPrompt += `\n\n${mandiContext}`;
-    }
 
-    const messages = [
+    // Build messages with an injected "priming" assistant turn
+    const chatMessages = [
       { role: 'system', content: systemPrompt },
+      // Warm-up: inject a prior assistant message so model adopts the persona immediately
+      { role: 'user', content: 'Who are you?' },
+      { role: 'assistant', content: 'Namaskar! Main AgriFather AI hoon — aapka kisan sahayak. Mujhse kheti, fasal, beej, khad, keetnashak, mandi bhav, ya koi bhi krishi samasya ke baare mein poochh sakte hain. Aap English ya Hindi mein poochh sakte hain. 🌾' },
       ...history.map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.text
       })),
-      { role: 'user', content: message }
+      { 
+        role: 'user', 
+        content: mandiContext 
+          ? `${message}\n\n[Context: ${mandiContext}]` 
+          : message 
+      }
     ];
 
     const modelsToTry = [
-      'google/gemma-2-9b-it:free',
-      'mistralai/mistral-7b-instruct:free',
-      'huggingfaceh4/zephyr-7b-beta:free',
       'meta-llama/llama-3.1-8b-instruct:free',
+      'meta-llama/llama-3.2-3b-instruct:free',
       'qwen/qwen-2-7b-instruct:free',
-      'meta-llama/llama-3.2-3b-instruct:free'
+      'mistralai/mistral-7b-instruct:free',
+      'google/gemma-2-9b-it:free',
+      'google/gemma-3-4b-it:free',
     ];
+
+    // Phrases that indicate the model is refusing/hallucinating its persona
+    const refusalPhrases = [
+      'my expertise lies in agriculture',
+      'i\'m happy to chat with you, but',
+      'as your agrifather, my expertise',
+      'not in topics like the one you asked',
+      'i cannot help with this',
+    ];
+
+    const isRefusal = (text) => {
+      const lower = text.toLowerCase();
+      return refusalPhrases.some(p => lower.includes(p));
+    };
+
+    const callModel = async (model, msgs) => {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
+          'X-Title': 'AgriFather AI'
+        },
+        body: JSON.stringify({
+          model,
+          messages: msgs,
+          temperature: 0.5,
+          max_tokens: 1024
+        })
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Status ${response.status}: ${errText}`);
+      }
+      const data = await response.json();
+      if (data.choices && data.choices[0]) {
+        return data.choices[0].message.content;
+      }
+      throw new Error('No choices in response');
+    };
 
     let reply = null;
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
-            'X-Title': 'AgriFather AI'
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 1024
-          })
-        });
+        console.log(`Trying model: ${model}`);
+        let text = await callModel(model, chatMessages);
 
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error(`OpenRouter model ${model} failed: ${response.status} ${errText}`);
-          lastError = new Error(`Status ${response.status}: ${errText}`);
-          continue; // Try next model
+        // If model is refusing, retry with a stronger direct instruction
+        if (isRefusal(text)) {
+          console.warn(`Model ${model} returned refusal. Retrying with override...`);
+          const overrideMsgs = [
+            { role: 'system', content: `You are a helpful farming assistant. The user asked: "${message}". Answer this farming question directly and helpfully in ${language}. Do not refuse. Just answer.` },
+            { role: 'user', content: message }
+          ];
+          text = await callModel(model, overrideMsgs);
         }
 
-        const data = await response.json();
-        if (data.choices && data.choices[0]) {
-          reply = data.choices[0].message.content;
-          break; // Success!
+        if (text && !isRefusal(text)) {
+          reply = text;
+          console.log(`Success with model: ${model}`);
+          break;
         }
       } catch (err) {
-        console.error(`OpenRouter fetch error for ${model}:`, err.message);
+        console.error(`OpenRouter error for ${model}:`, err.message);
         lastError = err;
       }
     }
@@ -620,14 +609,15 @@ Keep answers practical, actionable, and farmer-friendly.`;
     if (reply) {
       res.status(200).json({ reply });
     } else {
-      console.error('All free providers failed. Last error:', lastError?.message);
-      res.status(500).json({ message: 'AI error: All free providers are temporarily rate-limited. Please try again in a few minutes.' });
+      console.error('All providers failed. Last error:', lastError?.message);
+      res.status(500).json({ message: 'AI is temporarily unavailable. Please try again in a moment.' });
     }
   } catch (err) {
     console.error('OpenRouter chat error:', err.message);
     res.status(500).json({ message: 'AI error: ' + (err.message || 'Unknown error') });
   }
 });
+
 
 // ── OpenRouter: Scan (image analysis via vision model) ─────────────────────────────────────────────
 // POST /api/scan  multipart/form-data  { image: File, question?: string }
