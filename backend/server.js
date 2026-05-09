@@ -647,41 +647,61 @@ If the image is not related to agriculture, politely inform the user that you ar
     const base64Image = req.file.buffer.toString('base64');
     const imageUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
-        'X-Title': 'AgriFather AI'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash:free',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } }
-            ]
-          }
-        ],
-        temperature: 0.4,
-        max_tokens: 1024
-      })
-    });
+    const modelsToTry = [
+      'nvidia/nemotron-nano-12b-v2-vl:free',
+      'openrouter/free',
+      'google/gemma-4-26b-a4b-it:free'
+    ];
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('OpenRouter Vision API error:', response.status, errText);
-      throw new Error(`Vision API returned status ${response.status}`);
+    let analysis = null;
+    let lastError = null;
+
+    for (const model of modelsToTry) {
+      try {
+        console.log(`[Scan] Trying vision model: ${model}`);
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
+            'X-Title': 'AgriFather AI'
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: prompt },
+                  { type: 'image_url', image_url: { url: imageUrl } }
+                ]
+              }
+            ],
+            temperature: 0.4,
+            max_tokens: 1024
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Status ${response.status}: ${errText}`);
+        }
+
+        const data = await response.json();
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+          analysis = data.choices[0].message.content;
+          break; // Success!
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[Scan] Model ${model} failed:`, err.message);
+      }
     }
 
-    const data = await response.json();
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('No response from vision model');
+    if (!analysis) {
+      throw new Error(lastError ? lastError.message : 'All vision models failed');
     }
-    const analysis = data.choices[0].message.content;
 
     res.status(200).json({ analysis });
   } catch (err) {
