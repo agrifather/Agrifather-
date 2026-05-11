@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { X, User, MessageSquare, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import SEO from '../components/SEO';
 
 import { getRecentConversations, timeAgo } from '../utils/chatHistory';
 import { getUserItem, setUserItem } from '../utils/userStorage';
 import { useLanguage } from '../context/LanguageContext';
 import './Home.css';
+
 
 // ── Pick emoji based on message text ─────────────────────────────────────────
 function topicEmoji(text = '') {
@@ -103,8 +105,13 @@ const Home = () => {
 
   return (
     <div className="home-container pb-20">
+      <SEO 
+        title="Home" 
+        description="Your personalized farming dashboard on AgriFather. Access crop advisory, pest ID, and weather forecasts."
+      />
 
       {/* Header */}
+
       <header className="home-header">
         <div className="header-brand">
           <h2 className="brand-text">AgriFather</h2>

@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Search, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import SEO from '../components/SEO';
 import { useLanguage } from '../context/LanguageContext';
 import API_BASE from '../utils/api';
 import './Mandi.css';
+
 
 const Mandi = () => {
   const navigate = useNavigate();
@@ -27,7 +29,12 @@ const Mandi = () => {
 
   return (
     <div className="mandi-container pb-20">
+      <SEO 
+        title="Mandi Prices" 
+        description="Check real-time mandi prices and market trends on AgriFather. Stay updated with the latest rates for your crops."
+      />
       {/* Header */}
+
       <header className="mandi-header">
         <div className="header-left">
           <div className="avatar" onClick={() => navigate('/home')} style={{cursor: 'pointer'}}>

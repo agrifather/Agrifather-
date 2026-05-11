@@ -2,8 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { ArrowLeft, MapPin, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import SEO from '../components/SEO';
 import { getUserItem, setUserItem } from '../utils/userStorage';
 import './Weather.css';
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,7 +146,12 @@ const Weather = () => {
 
   return (
     <div className="weather-page">
+      <SEO 
+        title="Weather Forecast" 
+        description="Get accurate weather forecasts and farming advice tailored to your location on AgriFather."
+      />
       {/* Header */}
+
       <header className="weather-header">
         <div className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={18} />

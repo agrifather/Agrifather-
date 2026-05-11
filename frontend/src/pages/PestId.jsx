@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { ArrowLeft, Bug, Upload, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import SEO from '../components/SEO';
 import API_BASE from '../utils/api';
 import './Advisory.css';
+
 
 const PestId = () => {
   const navigate = useNavigate();
@@ -31,7 +33,12 @@ const PestId = () => {
 
   return (
     <div className="advisory-container pb-20" style={{minHeight: '100vh'}}>
+      <SEO 
+        title="AI Pest Identifier" 
+        description="Identify crop pests and diseases instantly with AgriFather's AI tool. Get treatment recommendations to save your harvest."
+      />
       <header className="advisory-header">
+
         <div className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} className="header-icon" />
         </div>

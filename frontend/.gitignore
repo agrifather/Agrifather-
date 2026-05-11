@@ -29,3 +29,5 @@ dist-ssr
 .env.development.local
 .env.test.local
 # Note: .env.production is intentionally NOT ignored so Vercel reads it
+
+.vercel

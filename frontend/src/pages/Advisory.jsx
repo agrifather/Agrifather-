@@ -1,8 +1,10 @@
 import { ArrowLeft, Calendar, Tractor, Droplet, Thermometer, Bug, CloudLightning, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import SEO from '../components/SEO';
 import { useLanguage } from '../context/LanguageContext';
 import './Advisory.css';
+
 
 const Advisory = () => {
   const navigate = useNavigate();
@@ -10,7 +12,12 @@ const Advisory = () => {
 
   return (
     <div className="advisory-container pb-20">
+      <SEO 
+        title="Crop Advisory" 
+        description="Get personalized crop advisory and farming guidance on AgriFather. Boost your harvest with expert tips."
+      />
       {/* Header */}
+
       <header className="advisory-header">
         <div className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} className="header-icon" />

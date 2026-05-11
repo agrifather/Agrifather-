@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import SEO from '../components/SEO';
 import logoImg from '../assets/logo.png';
 import './Landing.css';
 
@@ -18,8 +19,13 @@ const Landing = () => {
 
   return (
     <div className="landing-container">
+      <SEO 
+        title="Welcome" 
+        description="AgriFather - Your farm's AI partner. Empowering farmers with technology for better yields."
+      />
       {/* Background Particles */}
       <div className="particles">
+
         <div className="particle p1"></div>
         <div className="particle p2"></div>
         <div className="particle p3"></div>
