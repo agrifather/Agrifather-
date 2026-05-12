@@ -13,19 +13,40 @@ dotenv.config();
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'agrifather_super_secret_key_123';
 
-// Nodemailer Config
+// Nodemailer Config (Flexible SMTP supporting Gmail, Brevo, Resend, etc.)
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465;
+const SMTP_FROM_EMAIL = process.env.SMTP_FROM_EMAIL || SMTP_EMAIL;
 
 let transporter;
 if (SMTP_EMAIL && SMTP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail', // or your provider
-    auth: {
-      user: SMTP_EMAIL,
-      pass: SMTP_PASSWORD
-    }
-  });
+  // Gmail works best with nodemailer's built-in service configuration
+  if (SMTP_HOST.includes('gmail.com')) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: SMTP_EMAIL,
+        pass: SMTP_PASSWORD
+      }
+    });
+  } else {
+    // Generic SMTP for Brevo, Resend, Mailgun, etc.
+    transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: {
+        user: SMTP_EMAIL,
+        pass: SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false // Prevents SSL handshake issues with some hosts
+      }
+    });
+  }
 }
 
 // Multer: store uploaded images in memory as Buffer
@@ -135,10 +156,56 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
 
     console.log(`[EMAIL OTP] Email: ${email} | OTP: ${otp} | Purpose: ${purpose}`);
 
-    if (transporter) {
+    let emailSent = false;
+
+    // Direct HTTP API support for Brevo to bypass SMTP activation limitations
+    if (SMTP_HOST.includes('brevo.com') && SMTP_PASSWORD && SMTP_PASSWORD.startsWith('xkeysib-')) {
+      try {
+        console.log('[OTP] Attempting Brevo Transactional HTTP Web API...');
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'api-key': SMTP_PASSWORD,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            sender: { name: 'AgriFather', email: SMTP_FROM_EMAIL },
+            to: [{ email: email }],
+            subject: 'Your AgriFather OTP Code',
+            htmlContent: `
+              <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f5faf5;border-radius:12px;padding:32px;">
+                <h2 style="color:#2d7a23;margin-bottom:8px;">AgriFather 🌾</h2>
+                <p style="color:#333;">Your one-time password (OTP) for <b>${purpose === 'login' ? 'login' : 'registration'}</b> is:</p>
+                <div style="font-size:2.5rem;font-weight:bold;letter-spacing:12px;color:#2d7a23;text-align:center;padding:20px;background:#fff;border-radius:8px;border:2px dashed #a8d8a8;margin:20px 0;">${otp}</div>
+                <p style="color:#666;font-size:0.9rem;">This OTP is valid for <b>5 minutes</b>. Do not share it with anyone.</p>
+              </div>
+            `
+          })
+        });
+
+        const resData = await response.json();
+        if (response.ok) {
+          console.log('[OTP] Email sent successfully via Brevo Web API! Message ID:', resData.messageId);
+          emailSent = true;
+          return res.status(200).json({ 
+            message: 'OTP sent to your email',
+            otp: otp
+          });
+        } else {
+          console.error('[OTP] Brevo Web API returned error:', resData);
+          // Don't return here; we'll let it fall back to standard SMTP if possible
+        }
+      } catch (apiErr) {
+        console.error('[OTP] Brevo Web API Request Failed:', apiErr.message);
+        // Fall back to standard SMTP transport if available
+      }
+    }
+
+    if (!emailSent && transporter) {
       try {
         await transporter.sendMail({
-          from: `"AgriFather" <${SMTP_EMAIL}>`,
+          from: `"AgriFather" <${SMTP_FROM_EMAIL}>`,
           to: email,
           subject: "Your AgriFather OTP Code",
           html: `
@@ -153,7 +220,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
         console.log('[OTP] Email sent to:', email);
         res.status(200).json({ 
           message: 'OTP sent to your email',
-          otp: otp // Always return so frontend can show as fallback
+          otp: otp
         });
       } catch (mailErr) {
         console.error('[OTP] Email failed:', mailErr.message);
@@ -164,7 +231,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
           emailFailed: true
         });
       }
-    } else {
+    } else if (!emailSent) {
       console.log('SMTP not configured. Returning OTP in response for testing.');
       res.status(200).json({ message: 'OTP generated (Test Mode)', otp });
     }
