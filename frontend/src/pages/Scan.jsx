@@ -1,17 +1,35 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, Leaf, X, Loader, AlertCircle, CheckCircle, FlipHorizontal, Crown, Send, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { consumeImageToken, getRemainingTokens, getMaxTokens, getResetCountdown, hasUnlimitedAccess } from '../utils/imageTokens';
+import { useNotifications } from '../utils/NotificationContext';
+import { useScan } from '../utils/ScanContext';
+import logoImg from '../assets/logo.png';
 import API_BASE from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 import './Scan.css';
 
 const Scan = () => {
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
+  const { addNotification } = useNotifications();
+  const { 
+    images, 
+    activeIdx, 
+    setActiveIdx, 
+    addScanImages, 
+    removeScanImage, 
+    updateScanImageField, 
+    clearScan 
+  } = useScan();
 
-  // Multi-image state: array of { url, file, result, loading, error, question }
-  const [images, setImages] = useState([]);
-  const [activeIdx, setActiveIdx] = useState(0);
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
   const [globalLoading, setGlobalLoading] = useState(false);
 
   const [tokensLeft, setTokensLeft] = useState(() => getRemainingTokens());
@@ -42,24 +60,12 @@ const Scan = () => {
       error: '',
       question: '',
     }));
-    setImages(prev => {
-      const updated = [...prev, ...newImgs];
-      setActiveIdx(updated.length - 1);
-      return updated;
-    });
+    addScanImages(newImgs);
   };
 
-  const removeImage = (idx) => {
-    setImages(prev => {
-      const updated = prev.filter((_, i) => i !== idx);
-      setActiveIdx(Math.min(idx, updated.length - 1));
-      return updated;
-    });
-  };
+  const removeImage = (idx) => removeScanImage(idx);
 
-  const updateImageField = (idx, field, value) => {
-    setImages(prev => prev.map((img, i) => i === idx ? { ...img, [field]: value } : img));
-  };
+  const updateImageField = (idx, field, value) => updateScanImageField(idx, field, value);
 
   // ── Camera ──────────────────────────────────────────────────────────────────
   const startCamera = useCallback(async (front = false) => {
@@ -114,19 +120,45 @@ const Scan = () => {
     updateImageField(idx, 'error', '');
     updateImageField(idx, 'result', null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+
     try {
       const formData = new FormData();
       formData.append('image', img.file);
       if (img.question.trim()) formData.append('question', img.question.trim());
 
-      const res = await fetch(`${API_BASE}/api/scan`, { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE}/api/scan`, { 
+        method: 'POST', 
+        body: formData,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       const data = await res.json();
-      if (res.ok) updateImageField(idx, 'result', data.analysis);
-      else updateImageField(idx, 'error', data.message || 'Analysis failed. Please try again.');
-    } catch {
-      updateImageField(idx, 'error', 'Server unreachable. Make sure the backend is running.');
-    } finally {
-      updateImageField(idx, 'loading', false);
+
+      if (res.ok) {
+        // 1. Update the global context immediately (Context stays alive even if Scan.jsx unmounts)
+        updateScanImageField(idx, 'result', data.analysis);
+        updateScanImageField(idx, 'loading', false);
+
+        // 2. If the user has switched pages, send them a notification
+        if (!isMounted.current) {
+          addNotification({
+            type: 'alert',
+            title: 'AI Analysis Complete!',
+            subtitle: 'एआई विश्लेषण पूरा हुआ',
+            description: 'Your crop scan results are ready. You can view them in the Scanner section.',
+            shortDesc: 'Your crop scan results are ready.'
+          });
+        }
+      } else {
+        updateScanImageField(idx, 'error', data.message || 'Analysis failed. Please try again.');
+        updateScanImageField(idx, 'loading', false);
+      }
+    } catch (err) {
+      console.error('Scan error:', err);
+      updateScanImageField(idx, 'error', 'Connection lost. Please check your internet.');
+      updateScanImageField(idx, 'loading', false);
     }
   };
 
@@ -141,8 +173,7 @@ const Scan = () => {
 
   const clearAll = () => {
     stopCamera();
-    setImages([]);
-    setActiveIdx(0);
+    clearScan();
   };
 
   const formatResult = (text) =>
@@ -158,7 +189,7 @@ const Scan = () => {
     <div className="scan-page-container">
       {/* Header */}
       <div className="scan-header">
-        <div className="scan-header-icon"><Leaf size={22} color="#fff" /></div>
+        <img src={logoImg} alt="AgriFather" className="scan-header-icon" style={{ background: 'transparent', border: 'none', objectFit: 'contain' }} />
         <div style={{ flex: 1 }}>
           <h1 className="scan-header-title">Plant Scanner</h1>
           <p className="scan-header-sub">पत्ती / फसल / कीट पहचानें — Multiple images supported</p>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { loadHistory, appendMessages, clearHistory } from '../utils/chatHistory';
 import { getChatResetCountdown, hasUnlimitedAccess, getMaxChats } from '../utils/imageTokens';
+import logoImg from '../assets/logo.png';
 import { useChat } from '../utils/ChatContext';
 import { getUserItem, setUserItem } from '../utils/userStorage';
 import { useLanguage } from '../context/LanguageContext';
@@ -286,9 +287,7 @@ const Chat = () => {
       {/* ── Header ── */}
       <div className="chat-header">
         <div className="chat-header-info">
-          <div className="chat-avatar-large">
-            <Leaf size={18} color="#fff" />
-          </div>
+          <img src={logoImg} alt="AgriFather AI" className="chat-avatar-large" style={{ background: 'transparent', objectFit: 'contain' }} />
           <div>
             <h2 className="chat-title">{t('chatTitle')}</h2>
             <p className="chat-status">
@@ -338,9 +337,7 @@ const Chat = () => {
         {/* Empty / Welcome state */}
         {messages.length === 0 && !loading && (
           <div className="chat-welcome">
-            <div className="chat-welcome-logo">
-              <Leaf size={30} color="#fff" />
-            </div>
+            <img src={logoImg} alt="AgriFather AI" className="chat-welcome-logo" style={{ background: 'transparent', objectFit: 'contain' }} />
             <h2>{t('howCanIHelp')}</h2>
             <p>{t('chatDesc')}</p>
             {!isPro && (
@@ -362,7 +359,7 @@ const Chat = () => {
         {messages.map((msg) => (
           <div key={msg.id} className={`message-row ${msg.role === 'user' ? 'sent' : 'received'}`}>
             {msg.role === 'ai' && (
-              <div className="message-avatar ai-avatar"><Leaf size={15} /></div>
+              <img src={logoImg} alt="AI" className="message-avatar ai-avatar" style={{ background: 'transparent', objectFit: 'contain' }} />
             )}
             <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
               {msg.role === 'ai'
@@ -407,7 +404,7 @@ const Chat = () => {
         {/* Chat limit warning inline */}
         {chatLimitReached && (
           <div className="message-row received">
-            <div className="message-avatar ai-avatar"><Leaf size={15} /></div>
+            <img src={logoImg} alt="AI" className="message-avatar ai-avatar" style={{ background: 'transparent', objectFit: 'contain' }} />
             <div className="message-bubble ai-bubble">
               <div className="bubble-content">
                 <p className="md-p">
@@ -434,7 +431,7 @@ const Chat = () => {
         {/* Typing indicator */}
         {loading && (
           <div className="message-row received">
-            <div className="message-avatar ai-avatar"><Leaf size={15} /></div>
+            <img src={logoImg} alt="AI" className="message-avatar ai-avatar" style={{ background: 'transparent', objectFit: 'contain' }} />
             <div className="message-bubble ai-bubble typing-bubble">
               <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
             </div>
@@ -455,7 +452,7 @@ const Chat = () => {
       {/* ── Input Area ── */}
       <div className="chat-input-area">
         <button className="chat-scan-shortcut" onClick={() => navigate('/scan')} title={t('scanImage')}>
-          <Camera size={18} />
+          <Camera size={22} />
         </button>
 
         {/* Voice Mic Button */}
@@ -465,7 +462,7 @@ const Chat = () => {
           title={isListening ? 'Stop listening' : 'Speak your question'}
           disabled={loading || chatLimitReached}
         >
-          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+          {isListening ? <MicOff size={22} /> : <Mic size={22} />}
           {isListening && <span className="mic-pulse" />}
         </button>
 
@@ -488,8 +485,8 @@ const Chat = () => {
           title="Send"
         >
           {loading
-            ? <Loader size={17} color="#fff" className="spin-icon" />
-            : <ArrowUp size={18} color="#fff" />
+            ? <Loader size={20} color="#fff" className="spin-icon" />
+            : <ArrowUp size={22} color="#fff" />
           }
         </button>
       </div>

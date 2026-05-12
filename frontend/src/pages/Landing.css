@@ -17,7 +17,10 @@
 /* Background floating particles */
 .particles {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   pointer-events: none;
   z-index: 0;
 }
@@ -29,12 +32,47 @@
   opacity: 0.6;
 }
 
-.p1 { width: 4px; height: 4px; top: 15%; left: 30%; }
-.p2 { width: 6px; height: 6px; top: 25%; right: 20%; }
-.p3 { width: 3px; height: 3px; bottom: 30%; left: 25%; }
-.p4 { width: 5px; height: 5px; top: 40%; left: 10%; }
-.p5 { width: 4px; height: 4px; bottom: 40%; right: 30%; }
-.p6 { width: 3px; height: 3px; top: 10%; right: 10%; }
+.p1 {
+  width: 4px;
+  height: 4px;
+  top: 15%;
+  left: 30%;
+}
+
+.p2 {
+  width: 6px;
+  height: 6px;
+  top: 25%;
+  right: 20%;
+}
+
+.p3 {
+  width: 3px;
+  height: 3px;
+  bottom: 30%;
+  left: 25%;
+}
+
+.p4 {
+  width: 5px;
+  height: 5px;
+  top: 40%;
+  left: 10%;
+}
+
+.p5 {
+  width: 4px;
+  height: 4px;
+  bottom: 40%;
+  right: 30%;
+}
+
+.p6 {
+  width: 3px;
+  height: 3px;
+  top: 10%;
+  right: 10%;
+}
 
 .landing-content {
   position: relative;
@@ -69,7 +107,8 @@
 .title-hi {
   font-size: 2.4rem;
   font-weight: 600;
-  color: #3f9b4f; /* Green matching the image */
+  color: #3f9b4f;
+  /* Green matching the image */
   margin: 0;
   letter-spacing: 0.5px;
 }
@@ -88,7 +127,8 @@
   gap: 6px;
 }
 
-.tagline-hi, .tagline-en {
+.tagline-hi,
+.tagline-en {
   font-size: 1rem;
   color: #4c6655;
   margin: 0;
@@ -116,7 +156,8 @@
   border: 1px solid transparent;
   color: #4a5d51;
   padding: 10px 20px;
-  border-radius: 50px; /* Pill shape */
+  border-radius: 50px;
+  /* Pill shape */
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
@@ -136,7 +177,8 @@
 }
 
 .get-started-pill {
-  background: #5ba348; /* Solid green */
+  background: #5ba348;
+  /* Solid green */
   color: #ffffff;
   border: none;
   padding: 16px 24px;

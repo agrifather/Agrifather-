@@ -19,6 +19,7 @@
   justify-content: center;
   margin-bottom: 12px;
 }
+
 .register-logo-img {
   width: 80px;
   height: 80px;
@@ -53,14 +54,17 @@
 .reg-spinner {
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(255,255,255,0.4);
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
   border-radius: 50%;
   animation: reg-spin 0.7s linear infinite;
   display: inline-block;
 }
+
 @keyframes reg-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 
@@ -188,7 +192,7 @@
   margin-top: 2px;
 }
 
-.checkbox-container input:checked ~ .checkmark {
+.checkbox-container input:checked~.checkmark {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
@@ -199,7 +203,7 @@
   display: none;
 }
 
-.checkbox-container input:checked ~ .checkmark:after {
+.checkbox-container input:checked~.checkmark:after {
   display: block;
 }
 

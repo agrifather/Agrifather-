@@ -36,15 +36,7 @@ const Register = () => {
       const data = await res.json();
       if (res.ok) {
         setOtpSent(true);
-        if (data.otp && data.emailFailed) {
-          alert(`Email delivery failed. Your OTP is: ${data.otp}`);
-          setOtp(data.otp);
-        } else if (data.otp) {
-          // Dev mode
-          setOtp(data.otp);
-        } else {
-          alert('OTP sent to your email! (Check your inbox or spam folder)');
-        }
+        alert('OTP sent to your email! (Check your inbox or spam folder)');
       } else {
         setError(data.message || 'Failed to send OTP.');
       }
@@ -81,7 +73,9 @@ const Register = () => {
       if (res.ok) {
         // Auto-login after register
         localStorage.setItem('token', 'agrifather_token_' + data.user?._id);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        const userToSave = { ...data.user };
+        delete userToSave.profilePic;
+        localStorage.setItem('user', JSON.stringify(userToSave));
         navigate('/home');
       } else {
         setError(data.message || 'Registration failed. Please try again.');

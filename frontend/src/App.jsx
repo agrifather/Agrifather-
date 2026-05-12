@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './utils/NotificationContext';
 import { ChatProvider } from './utils/ChatContext';
+import { ScanProvider } from './utils/ScanContext';
 import Landing from './pages/Landing';
 import Splash from './pages/Splash';
 import Welcome from './pages/Welcome';
@@ -38,7 +39,8 @@ function App() {
       <LanguageProvider>
         <NotificationProvider>
           <ChatProvider>
-            <Router>
+            <ScanProvider>
+              <Router>
               <Routes>
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="/splash" element={<Splash />} />
@@ -64,8 +66,9 @@ function App() {
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Router>
-          </ChatProvider>
-        </NotificationProvider>
+          </ScanProvider>
+        </ChatProvider>
+      </NotificationProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

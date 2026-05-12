@@ -11,21 +11,24 @@ import './Mandi.css';
 const Mandi = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [seeds, setSeeds] = useState([]);
+  const [marketData, setMarketData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('crops'); // 'crops' or 'fertilizers'
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/seeds`)
+    setLoading(true);
+    const endpoint = activeTab === 'crops' ? '/api/market/prices' : '/api/market/fertilizers';
+    fetch(`${API_BASE}${endpoint}`)
       .then(res => res.json())
       .then(data => {
-        setSeeds(data);
+        setMarketData(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching seeds:", err);
+        console.error("Error fetching market data:", err);
         setLoading(false);
       });
-  }, []);
+  }, [activeTab]);
 
   return (
     <div className="mandi-container pb-20">
@@ -59,9 +62,18 @@ const Mandi = () => {
       {/* Filter Tabs */}
       <div className="mandi-tabs-container">
         <div className="mandi-tabs">
-          <button className="mandi-tab active">{t('nagpurMandi')}</button>
-          <button className="mandi-tab">{t('puneApmc')}</button>
-          <button className="mandi-tab">INDORE</button>
+          <button 
+            className={`mandi-tab ${activeTab === 'crops' ? 'active' : ''}`}
+            onClick={() => setActiveTab('crops')}
+          >
+            Real-time Mandi (Crops/Fruits)
+          </button>
+          <button 
+            className={`mandi-tab ${activeTab === 'fertilizers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('fertilizers')}
+          >
+            Fertilizers / उर्वरक
+          </button>
         </div>
         {/* Fake scrollbar track below tabs matching design */}
         <div className="scroll-indicator">
@@ -71,20 +83,23 @@ const Mandi = () => {
 
       <div className="mandi-content">
         {loading ? (
-          <div style={{color: '#fcae59', textAlign: 'center'}}>Loading market data...</div>
+          <div className="loading-container" style={{padding: '40px', textAlign: 'center'}}>
+            <div className="login-spinner" style={{borderColor: 'rgba(45, 168, 74, 0.2)', borderTopColor: '#2da84a', width: '40px', height: '40px'}}></div>
+            <p style={{color: '#2da84a', marginTop: '16px', fontWeight: '500'}}>Fetching live market rates...</p>
+          </div>
         ) : (
-          seeds.map(seed => (
-            <div key={seed.id} className="market-card" onClick={() => navigate(`/seed/${seed.id}`)} style={{cursor: 'pointer'}}>
+          marketData.map((item, index) => (
+            <div key={item.id} className="market-card" onClick={() => item.category === 'FERTILIZER' ? null : navigate(`/seed/${item.id}`)} style={{cursor: item.category === 'FERTILIZER' ? 'default' : 'pointer'}}>
               <div className="market-card-header">
                 <div className="crop-info">
-                  <span className="category-tag text-green">{seed.category}</span>
-                  <h3 className="hindi-text crop-name">{seed.name}</h3>
-                  <p className="hindi-text crop-sub">{seed.sub}</p>
+                  <span className={`category-tag ${item.category === 'FERTILIZER' ? 'text-orange' : 'text-green'}`}>{item.category}</span>
+                  <h3 className="hindi-text crop-name">{item.name}</h3>
+                  <p className="hindi-text crop-sub">{item.sub}</p>
                 </div>
                 <div className="price-info">
-                  <h3 className="price text-orange">{seed.price} <span className="unit">{seed.unit}</span></h3>
-                  <span className={`trend ${seed.trend}`}>
-                    {seed.trend === 'positive' ? <TrendingUp size={14} /> : <TrendingDown size={14} />} {seed.change}
+                  <h3 className="price text-orange">{item.price} <span className="unit">{item.unit}</span></h3>
+                  <span className={`trend ${item.trend}`}>
+                    {item.trend === 'positive' ? <TrendingUp size={14} /> : <TrendingDown size={14} />} {item.change}
                   </span>
                 </div>
               </div>

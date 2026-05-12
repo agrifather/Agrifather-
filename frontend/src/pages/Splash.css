@@ -16,7 +16,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     radial-gradient(#8fcf9f 1.5px, transparent 1.5px),
     radial-gradient(#8fcf9f 1px, transparent 1px);
   background-size: 100px 100px, 150px 150px;
@@ -50,7 +50,7 @@
   width: 140px;
   height: 140px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 16px rgba(91,179,73,0.25));
+  filter: drop-shadow(0 4px 16px rgba(91, 179, 73, 0.25));
 }
 
 .splash-register-link {

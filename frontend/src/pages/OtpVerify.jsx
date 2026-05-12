@@ -11,13 +11,9 @@ const OtpVerify = () => {
   const location = useLocation();
 
   // purpose: 'login' | 'forgot-password' | 'register'
-  const { mobile = '', email = '', purpose = 'login', prefillOtp = '' } = location.state || {};
+  const { mobile = '', email = '', purpose = 'login' } = location.state || {};
 
-  const initialOtp = prefillOtp 
-    ? String(prefillOtp).split('').slice(0, OTP_LENGTH).concat(Array(Math.max(0, OTP_LENGTH - String(prefillOtp).length)).fill(''))
-    : Array(OTP_LENGTH).fill('');
-
-  const [otp, setOtp] = useState(initialOtp);
+  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
@@ -88,7 +84,11 @@ const OtpVerify = () => {
       if (res.ok) {
         if (purpose === 'login') {
           localStorage.setItem('token', data.token || '');
-          if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+          if (data.user) {
+            const userToSave = { ...data.user };
+            delete userToSave.profilePic;
+            localStorage.setItem('user', JSON.stringify(userToSave));
+          }
           navigate('/home');
         } else if (purpose === 'forgot-password') {
           navigate('/home'); // redirect after password reset success

@@ -12,10 +12,16 @@ const Settings = () => {
   const { darkMode, toggleTheme, setDarkMode } = useTheme();
   const { t, langLabel, setLang } = useLanguage();
 
-  const [voiceMode, setVoiceMode]           = useState(() => getUserItem('af_voiceMode') !== 'false');
+  const [voiceMode, setVoiceMode]           = useState(false); // Coming soon — keep off by default
   const [notifications, setNotifications]  = useState(() => getUserItem('af_notifications') !== 'false');
   const [responseStyle, setResponseStyle]   = useState(() => getUserItem('af_responseStyle', 'Detailed'));
   const [modal, setModal]                   = useState(null); // 'privacy' | 'help' | null
+  const [toast, setToast]                   = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3500);
+  };
 
   useEffect(() => { setUserItem('af_voiceMode', voiceMode); }, [voiceMode]);
   useEffect(() => { setUserItem('af_notifications', notifications); }, [notifications]);
@@ -29,6 +35,21 @@ const Settings = () => {
 
   return (
     <div className="settings-page">
+      {/* ── Toast Notification ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(20,20,20,0.92)', backdropFilter: 'blur(10px)',
+          color: '#fff', padding: '12px 22px', borderRadius: 12,
+          fontSize: '0.88rem', fontWeight: 600, zIndex: 9999,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+          maxWidth: '90vw', textAlign: 'center',
+          animation: 'fadeInUp 0.3s ease'
+        }}>
+          {toast}
+        </div>
+      )}
+
       <div className="settings-header">
         <ArrowLeft size={24} className="back-icon" onClick={() => navigate(-1)} />
         <h2 className="header-title hindi-text">{t('settings')}</h2>
@@ -85,19 +106,35 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Voice Mode */}
-          <div className="setting-card">
+          {/* Voice Mode — Coming Soon */}
+          <div className="setting-card" style={{ position: 'relative' }}>
             <div className="setting-left">
               <div className="setting-icon-wrapper">
                 <Volume2 size={20} color="#2da84a" />
               </div>
               <div className="setting-text">
-                <h4 className="setting-title hindi-text">{t('voiceMode')}</h4>
-                <p className="setting-subtitle">{voiceMode ? t('voiceEnabled') : t('voiceDisabled')}</p>
+                <h4 className="setting-title hindi-text" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {t('voiceMode')}
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: 0.5,
+                    background: 'linear-gradient(90deg,#f59e0b,#ef4444)',
+                    color: '#fff', borderRadius: 20, padding: '2px 8px'
+                  }}>SOON</span>
+                </h4>
+                <p className="setting-subtitle">This feature is coming soon!</p>
               </div>
             </div>
             <div className="setting-right">
-              <Toggle on={voiceMode} onChange={setVoiceMode} />
+              <Toggle
+                on={voiceMode}
+                onChange={(val) => {
+                  if (val) {
+                    showToast('🎙️ Voice Mode responses are coming soon! We are working on it. / जल्द आने वाला है!');
+                  } else {
+                    setVoiceMode(false);
+                  }
+                }}
+              />
             </div>
           </div>
 

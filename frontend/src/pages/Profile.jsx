@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Camera, Edit, MapPin, Leaf, Image, Crown } from 'lucide-react';
+import { ArrowLeft, Edit, MapPin, Leaf, Image, Crown, Mic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,7 +13,7 @@ import './Profile.css';
 
 // ── Small reusable toggle button ─────────────────────────────────────────────
 const CycleButton = ({ options, value, onChange }) => {
-  const idx  = options.indexOf(value);
+  const idx = options.indexOf(value);
   const next = () => onChange(options[(idx + 1) % options.length]);
   return (
     <button className="cycle-btn" onClick={next}>
@@ -31,11 +31,64 @@ const ToggleSwitch = ({ on, onChange }) => (
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Profile = () => {
-  const navigate  = useNavigate();
-  const { lang, setLang, langLabel } = useLanguage();
-  const fileRef   = useRef(null);
+// ── Image compression utility ────────────────────────────────────────────────
+// Profile pics are compressed hard (300×300, 0.45 quality) so the base64
+// string stored in MongoDB stays tiny (~15–25 KB) → fast saves, no hangs.
+const compressImage = (file, maxWidth = 300, maxHeight = 300, quality = 0.45) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
 
+        // Maintain aspect ratio within 300×300 box
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name || 'profile.jpg', {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error('Canvas compression returned null blob'));
+            }
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
+const Profile = () => {
+  const navigate = useNavigate();
+  const { lang, setLang, langLabel } = useLanguage();
   // ── Load user from localStorage ───────────────────────────────────────────
   const [localUser, setLocalUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('user')) || {}; }
@@ -45,81 +98,76 @@ const Profile = () => {
   const token = localStorage.getItem('token') || '';
 
   // ── Profile state ─────────────────────────────────────────────────────────
-  const [name,     setName]     = useState(localUser.name     || '');
+  const [name, setName] = useState(localUser.name || '');
   const [location, setLocation] = useState(getUserItem('af_location', 'Vidarbha, Maharashtra'));
-  const [profilePic, setProfilePic] = useState(localUser.profilePic || '');
+
+  // ── Fetch User Profile on Mount ─────────────────────────
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const { user } = await res.json();
+          // Profile pic is no longer updated
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      }
+    };
+    if (token) fetchProfile();
+  }, [token]);
 
   // ── Crops & Farm ──────────────────────────────────────────────────────────
   const [crops, setCrops] = useState(() => {
     try { return JSON.parse(getUserItem('af_crops')) || [localUser.crop || 'Wheat']; }
     catch { return [localUser.crop || 'Wheat']; }
   });
-  const [landArea,  setLandArea]  = useState(getUserItem('af_landArea', '5.2 acres'));
-  const [soilType,  setSoilType]  = useState(getUserItem('af_soilType', 'Clay Loam'));
+  const [landArea, setLandArea] = useState(getUserItem('af_landArea', '5.2 acres'));
+  const [soilType, setSoilType] = useState(getUserItem('af_soilType', 'Clay Loam'));
 
   // ── Settings ──────────────────────────────────────────────────────────────
-  const [voiceMode,      setVoiceMode]      = useState(() => getUserItem('af_voiceMode') !== 'false');
-  const [notifications,  setNotifications]  = useState(() => getUserItem('af_notifications') !== 'false');
-  const [responseStyle,  setResponseStyle]  = useState(() => getUserItem('af_responseStyle') || 'Detailed');
+  const [voiceMode, setVoiceMode] = useState(() => getUserItem('af_voiceMode') !== 'false');
+  const [notifications, setNotifications] = useState(() => getUserItem('af_notifications') !== 'false');
+  const [responseStyle, setResponseStyle] = useState(() => getUserItem('af_responseStyle') || 'Detailed');
 
   // ── Modal ─────────────────────────────────────────────────────────────────
-  const [modalType,   setModalType]  = useState(null); // 'profile' | 'crops' | 'farm'
-  const [tempInput,   setTempInput]  = useState('');
-  const [tempInput2,  setTempInput2] = useState('');
-  const [saving,      setSaving]     = useState(false);
-  const [saveMsg,     setSaveMsg]    = useState('');
+  const [modalType, setModalType] = useState(null); // 'profile' | 'crops' | 'farm'
+  const [tempInput, setTempInput] = useState('');
+  const [tempInput2, setTempInput2] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [toast, setToast] = useState('');   // ← global in-page toast
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3500);
+  };
 
   // ── Image Token state ─────────────────────────────────────────────────────
   const [tokensLeft] = useState(() => getRemainingTokens());
-  const maxTokens    = getMaxTokens();
-  const isPro        = hasUnlimitedAccess();
-  const tokenPct     = isPro ? 100 : Math.round((tokensLeft / maxTokens) * 100);
-  const resetIn      = (!isPro && tokensLeft < maxTokens) ? getResetCountdown() : null;
-  const subStatus    = getSubscriptionStatus();
+  const maxTokens = getMaxTokens();
+  const isPro = hasUnlimitedAccess();
+  const tokenPct = isPro ? 100 : Math.round((tokensLeft / maxTokens) * 100);
+  const resetIn = (!isPro && tokensLeft < maxTokens) ? getResetCountdown() : null;
+  const subStatus = getSubscriptionStatus();
 
   // ── Chat Token state ──────────────────────────────────────────────────────
-  const chatsLeft    = getRemainingChats();
-  const maxChats     = getMaxChats();
-  const chatPct      = isPro ? 100 : Math.round((chatsLeft / maxChats) * 100);
-  const chatResetIn  = (!isPro && chatsLeft < maxChats) ? getChatResetCountdown() : null;
+  const chatsLeft = getRemainingChats();
+  const maxChats = getMaxChats();
+  const chatPct = isPro ? 100 : Math.round((chatsLeft / maxChats) * 100);
+  const chatResetIn = (!isPro && chatsLeft < maxChats) ? getChatResetCountdown() : null;
 
   // Persist settings to localStorage
-  useEffect(() => { setUserItem('af_voiceMode',     voiceMode);     }, [voiceMode]);
+  useEffect(() => { setUserItem('af_voiceMode', voiceMode); }, [voiceMode]);
   useEffect(() => { setUserItem('af_notifications', notifications); }, [notifications]);
   useEffect(() => { setUserItem('af_responseStyle', responseStyle); }, [responseStyle]);
 
   const farmerId = `AG-${(localUser.mobile || '00000').slice(-5).padStart(5, '0')}`;
+  // Avatar doesn't need click handlers anymore
   const getInitial = (n) => n ? n.charAt(0).toUpperCase() : '?';
-
-  // ── Profile pic change ────────────────────────────────────────────────────
-  const handlePicChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Preview immediately
-    const reader = new FileReader();
-    reader.onload = (ev) => setProfilePic(ev.target.result);
-    reader.readAsDataURL(file);
-
-    // Upload to backend
-    try {
-      const fd = new FormData();
-      fd.append('profilePic', file);
-      const res = await fetch(`${API_BASE}/api/auth/profile`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-      if (res.ok) {
-        const { user } = await res.json();
-        const updated = { ...localUser, ...user };
-        setLocalUser(updated);
-        localStorage.setItem('user', JSON.stringify(updated));
-        setProfilePic(user.profilePic || '');
-      }
-    } catch (err) {
-      console.error('Profile pic upload failed:', err);
-    }
-  };
 
   // ── Save name ─────────────────────────────────────────────────────────────
   const saveProfile = async () => {
@@ -138,7 +186,11 @@ const Profile = () => {
           const { user } = await res.json();
           const updated = { ...localUser, name: user.name };
           setLocalUser(updated);
-          localStorage.setItem('user', JSON.stringify(updated));
+
+          const userToSave = { ...updated };
+          delete userToSave.profilePic;
+          localStorage.setItem('user', JSON.stringify(userToSave));
+
           setUserItem('af_location', location);
           setSaveMsg('Saved!');
           setTimeout(() => setSaveMsg(''), 2000);
@@ -170,6 +222,20 @@ const Profile = () => {
 
   return (
     <div className="profile-page-container">
+      {/* ── Global Toast ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(20,20,20,0.92)', backdropFilter: 'blur(10px)',
+          color: '#fff', padding: '12px 22px', borderRadius: 12,
+          fontSize: '0.9rem', fontWeight: 600, zIndex: 9999,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+          maxWidth: '90vw', textAlign: 'center',
+          animation: 'fadeInUp 0.3s ease'
+        }}>
+          {toast}
+        </div>
+      )}
       {/* HEADER */}
       <div className="profile-header">
         <div className="profile-header-left">
@@ -180,39 +246,15 @@ const Profile = () => {
 
       <div className="profile-content pb-32">
 
-        {/* AVATAR & INFO CARD */}
-        <div className="profile-info-card">
-          {/* Avatar with camera overlay */}
-          <div className="avatar-wrap" onClick={() => fileRef.current?.click()}>
-            {profilePic ? (
-              <img src={profilePic} alt="Profile" className="avatar-img" />
-            ) : (
-              <div className="avatar-circle">{getInitial(name)}</div>
-            )}
-            <div className="avatar-camera-overlay">
-              <Camera size={16} color="#fff" />
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handlePicChange}
-            />
+        {/* USER NAME INITIAL & NAME (Replaces Profile Section) */}
+        <div className="user-initial-header">
+          <div className="avatar-circle">
+            {getInitial(name)}
           </div>
-
-          <h2 className="profile-name hindi-text">{name || 'किसान जी'}</h2>
-          <p className="profile-name-en">{name || 'Kisan Ji'}</p>
-          <p className="profile-location">{location}</p>
-
-          <div className="farmer-id-badge">Farmer ID: {farmerId}</div>
-
-          <button className="edit-profile-btn" onClick={() => {
-            setTempInput(name);
-            setModalType('profile');
-          }}>
-            <Edit size={16} /> Edit Profile
-          </button>
+          <div className="user-header-details">
+            <h2 className="profile-name hindi-text">{name || 'किसान जी'}</h2>
+            <p className="profile-name-en">{name || 'Kisan Ji'}</p>
+          </div>
         </div>
 
         {/* MY CROPS */}
@@ -292,10 +334,10 @@ const Profile = () => {
               {isPro
                 ? '✅ Unlimited messages with Pro plan.'
                 : chatsLeft === 0
-                ? `🚫 All messages used. Resets in ${getChatResetCountdown()}.`
-                : chatsLeft <= 3
-                ? `⚠️ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining — resets in ${chatResetIn}.`
-                : `✅ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining today.`
+                  ? `🚫 All messages used. Resets in ${getChatResetCountdown()}.`
+                  : chatsLeft <= 3
+                    ? `⚠️ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining — resets in ${chatResetIn}.`
+                    : `✅ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining today.`
               }
             </p>
           </div>
@@ -322,8 +364,8 @@ const Profile = () => {
               {tokensLeft === 0
                 ? `🚫 All scans used. Resets in ${getResetCountdown()}.`
                 : tokensLeft <= 2
-                ? `⚠️ ${tokensLeft} scan${tokensLeft === 1 ? '' : 's'} remaining — resets in ${resetIn}.`
-                : `✅ ${tokensLeft} image scan${tokensLeft === 1 ? '' : 's'} remaining in this 48-hour window.`
+                  ? `⚠️ ${tokensLeft} scan${tokensLeft === 1 ? '' : 's'} remaining — resets in ${resetIn}.`
+                  : `✅ ${tokensLeft} image scan${tokensLeft === 1 ? '' : 's'} remaining in this 48-hour window.`
               }
             </p>
           </div>
@@ -378,15 +420,24 @@ const Profile = () => {
               />
             </div>
 
-            {/* Voice Mode — toggle On/Off */}
+            {/* Voice Mode — Coming Soon */}
             <div className="setting-card-unified">
               <div className="setting-unified-text">
                 <p className="setting-unified-label">Voice Mode</p>
                 <p className="setting-unified-sub hindi-text">आवाज मोड</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="toggle-label">{voiceMode ? 'On' : 'Off'}</span>
-                <ToggleSwitch on={voiceMode} onChange={setVoiceMode} />
+                <span style={{ fontSize: '0.75rem', background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#fff', borderRadius: 20, padding: '2px 10px', fontWeight: 700, letterSpacing: 0.3 }}>Soon</span>
+                <ToggleSwitch
+                  on={voiceMode}
+                  onChange={(val) => {
+                    if (val) {
+                      showToast('🎙️ Voice Mode is coming soon! Stay tuned. / जल्द आने वाला है!');
+                    } else {
+                      setVoiceMode(false);
+                    }
+                  }}
+                />
               </div>
             </div>
 
@@ -534,6 +585,7 @@ const Profile = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

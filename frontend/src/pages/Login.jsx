@@ -37,7 +37,9 @@ const Login = () => {
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        const userToSave = { ...data.user };
+        delete userToSave.profilePic;
+        localStorage.setItem('user', JSON.stringify(userToSave));
         navigate('/home');
       } else {
         setError(data.message || 'Login failed. Please try again.');
@@ -66,14 +68,7 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.otp && data.emailFailed) {
-          // Email delivery failed — show OTP on screen as fallback
-          setOtpDisplay(data.otp);
-        } else if (data.otp) {
-          // Dev/test mode — show on screen but email also sent
-          setOtpDisplay(data.otp);
-        }
-        navigate('/verify-otp', { state: { email: otpEmail, purpose: 'login', prefillOtp: data.otp } });
+        navigate('/verify-otp', { state: { email: otpEmail, purpose: 'login' } });
       } else {
         setOtpError(data.message || 'Could not send OTP.');
       }

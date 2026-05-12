@@ -40,7 +40,7 @@
 .login-spinner {
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(255,255,255,0.4);
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
   border-radius: 50%;
   animation: login-spin 0.7s linear infinite;
@@ -48,7 +48,9 @@
 }
 
 @keyframes login-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 
