@@ -159,7 +159,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
     let emailSent = false;
 
     // Direct HTTP API support for Brevo to bypass SMTP activation limitations
-    if (SMTP_HOST.includes('brevo.com') && SMTP_PASSWORD && SMTP_PASSWORD.startsWith('xkeysib-')) {
+    if (SMTP_PASSWORD && SMTP_PASSWORD.startsWith('xkeysib-')) {
       try {
         console.log('[OTP] Attempting Brevo Transactional HTTP Web API...');
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
