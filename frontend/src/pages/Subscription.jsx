@@ -12,7 +12,7 @@ const PLANS = {
     price: 'Free',
     period: '',
     features: [
-      { text: '10 messages per day', included: true },
+      { text: 'Unlimited messages', included: true },
       { text: 'Basic crop advisory', included: true },
       { text: 'Hindi & English support', included: true },
       { text: 'Weather updates', included: true },

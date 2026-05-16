@@ -25,7 +25,14 @@ export const ChatProvider = ({ children }) => {
     setChatLimitReached(!hasUnlimitedAccess() && chatsLeft === 0);
   }, [chatsLeft]);
 
-  const sendMessage = async (text, responseStyle = 'Detailed', langFullName = 'Hindi') => {
+  // Sync when user data is updated globally
+  useEffect(() => {
+    const handleSync = () => setChatsLeft(getRemainingChats());
+    window.addEventListener('user-synced', handleSync);
+    return () => window.removeEventListener('user-synced', handleSync);
+  }, []);
+
+  const sendMessage = async (text, responseStyle = 'Detailed', langFullName = 'Hindi', selectedModel = 'auto') => {
     if (!text || loading) return { success: false, reason: 'empty' };
 
     const chatResult = consumeChatToken();
@@ -45,12 +52,32 @@ export const ChatProvider = ({ children }) => {
     }));
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, responseStyle, language: langFullName }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ message: text, history, responseStyle, language: langFullName, preferredModel: selectedModel }),
       });
+
+      if (res.status === 403) {
+        setChatsLeft(0);
+        setLoading(false);
+        return { success: false, reason: 'limit' };
+      }
+
       const data = await res.json();
+      
+      // Update local token count from backend response
+      if (data.chatTokensUsed !== undefined) {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        user.chatTokensUsed = data.chatTokensUsed;
+        localStorage.setItem('user', JSON.stringify(user));
+        setChatsLeft(getRemainingChats());
+      }
+
       const aiMsg = {
         role: 'ai',
         text: res.ok ? data.reply : ('⚠️ ' + (data.message || 'Something went wrong.')),

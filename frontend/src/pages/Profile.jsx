@@ -147,7 +147,7 @@ const Profile = () => {
   };
 
   // ── Image Token state ─────────────────────────────────────────────────────
-  const [tokensLeft] = useState(() => getRemainingTokens());
+  const [tokensLeft, setTokensLeft] = useState(() => getRemainingTokens());
   const maxTokens = getMaxTokens();
   const isPro = hasUnlimitedAccess();
   const tokenPct = isPro ? 100 : Math.round((tokensLeft / maxTokens) * 100);
@@ -155,10 +155,21 @@ const Profile = () => {
   const subStatus = getSubscriptionStatus();
 
   // ── Chat Token state ──────────────────────────────────────────────────────
-  const chatsLeft = getRemainingChats();
+  const [chatsLeft, setChatsLeft] = useState(() => getRemainingChats());
   const maxChats = getMaxChats();
   const chatPct = isPro ? 100 : Math.round((chatsLeft / maxChats) * 100);
   const chatResetIn = (!isPro && chatsLeft < maxChats) ? getChatResetCountdown() : null;
+
+  // Sync when user data is updated globally (e.g. from App.jsx UserSync)
+  useEffect(() => {
+    const handleSync = () => {
+      setTokensLeft(getRemainingTokens());
+      setChatsLeft(getRemainingChats());
+      try { setLocalUser(JSON.parse(localStorage.getItem('user')) || {}); } catch(e){}
+    };
+    window.addEventListener('user-synced', handleSync);
+    return () => window.removeEventListener('user-synced', handleSync);
+  }, []);
 
   // Persist settings to localStorage
   useEffect(() => { setUserItem('af_voiceMode', voiceMode); }, [voiceMode]);
@@ -312,35 +323,6 @@ const Profile = () => {
         <div className="profile-section">
           <h3 className="section-heading hindi-text">Usage Quotas / उपयोग सीमा</h3>
 
-          {/* Chat Messages */}
-          <div className="token-card" style={{ marginBottom: 12 }}>
-            <div className="token-header">
-              <div className="token-icon-wrap">💬</div>
-              <div className="token-info">
-                <p className="token-title">Daily Messages</p>
-                <p className="token-sub hindi-text">प्रति दिन संदेश</p>
-              </div>
-              <div className={`token-count ${!isPro && chatsLeft === 0 ? 'token-zero' : ''}`}>
-                {isPro ? '∞' : `${chatsLeft}/${maxChats}`}
-              </div>
-            </div>
-            <div className="token-bar-bg">
-              <div
-                className="token-bar-fill"
-                style={{ width: `${chatPct}%`, background: isPro ? '#2da84a' : chatsLeft === 0 ? '#ef4444' : chatsLeft <= 3 ? '#f59e0b' : '#2da84a' }}
-              />
-            </div>
-            <p className="token-desc">
-              {isPro
-                ? '✅ Unlimited messages with Pro plan.'
-                : chatsLeft === 0
-                  ? `🚫 All messages used. Resets in ${getChatResetCountdown()}.`
-                  : chatsLeft <= 3
-                    ? `⚠️ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining — resets in ${chatResetIn}.`
-                    : `✅ ${chatsLeft} message${chatsLeft === 1 ? '' : 's'} remaining today.`
-              }
-            </p>
-          </div>
 
           {/* Image Scans */}
           <div className="token-card">
@@ -348,7 +330,7 @@ const Profile = () => {
               <div className="token-icon-wrap"><Image size={20} color="#2da84a" /></div>
               <div className="token-info">
                 <p className="token-title">Daily Image Scans</p>
-                <p className="token-sub hindi-text">प्रति 48 घंटे में छवि स्कैन</p>
+                <p className="token-sub hindi-text">प्रति 24 घंटे में छवि स्कैन</p>
               </div>
               <div className={`token-count ${tokensLeft === 0 ? 'token-zero' : ''}`}>
                 {tokensLeft}/{maxTokens}
@@ -365,7 +347,7 @@ const Profile = () => {
                 ? `🚫 All scans used. Resets in ${getResetCountdown()}.`
                 : tokensLeft <= 2
                   ? `⚠️ ${tokensLeft} scan${tokensLeft === 1 ? '' : 's'} remaining — resets in ${resetIn}.`
-                  : `✅ ${tokensLeft} image scan${tokensLeft === 1 ? '' : 's'} remaining in this 48-hour window.`
+                  : `✅ ${tokensLeft} image scan${tokensLeft === 1 ? '' : 's'} remaining in this 24-hour window.`
               }
             </p>
           </div>
@@ -381,7 +363,7 @@ const Profile = () => {
               </div>
               <div className="profile-sub-info">
                 <p className="sub-title">{subStatus.active ? (subStatus.planName || 'Pro Plan') : 'Free Plan'}</p>
-                <p className="sub-desc">{subStatus.active ? 'Unlimited scans & messages' : '5 scans per 48 hours'}</p>
+                <p className="sub-desc">{subStatus.active ? 'Unlimited scans & messages' : '5 scans per 24 hours'}</p>
               </div>
               <span className={`profile-sub-status ${subStatus.active ? 'active' : 'free'}`}>
                 {subStatus.active ? 'Active' : 'Free'}

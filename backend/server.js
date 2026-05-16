@@ -13,6 +13,8 @@ dotenv.config();
 
 // OpenRouter API configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'agrifather_super_secret_key_123';
 
 // Nodemailer Config (Flexible SMTP supporting Gmail, Brevo, Resend, etc.)
@@ -70,7 +72,11 @@ const userSchema = new mongoose.Schema({
   email: String,
   crop: String,
   password: { type: String, default: 'password123' },
-  profilePic: { type: String, default: '' } // base64 data URL
+  profilePic: { type: String, default: '' }, // base64 data URL
+  chatTokensUsed: { type: Number, default: 0 },
+  lastChatReset: { type: Date, default: Date.now },
+  imageTokensUsed: { type: Number, default: 0 },
+  lastImageReset: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
@@ -128,7 +134,19 @@ app.post('/api/auth/register', async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
 
-    res.status(201).json({ message: 'User registered successfully', token, user: { _id: user._id, name: user.name, mobile: user.mobile, crop: user.crop, profilePic: user.profilePic || '' } });
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      token, 
+      user: { 
+        _id: user._id, 
+        name: user.name, 
+        mobile: user.mobile, 
+        crop: user.crop, 
+        profilePic: user.profilePic || '',
+        chatTokensUsed: user.chatTokensUsed,
+        imageTokensUsed: user.imageTokensUsed
+      } 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -148,7 +166,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
     if (purpose === 'register' && user) {
       return res.status(400).json({ message: 'Account already exists with this email' });
     }
-    if (purpose === 'login' && !user) {
+    if ((purpose === 'login' || purpose === 'forgot-password') && !user) {
       return res.status(404).json({ message: 'No account found with this email. Please register.' });
     }
 
@@ -185,13 +203,13 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
                   <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                       <td align="center">
-                        ${logoDataUrl ? `<img src="${logoDataUrl}" alt="AgriFather Logo" width="180" style="display: block; outline: none; border: none; text-decoration: none;" />` : '<h1 style="color: #2da84a; font-size: 28px; margin: 0;">AgriFather</h1>'}
+                        ${logoBase64 ? `<img src="cid:logo_small.png" alt="AgriFather Logo" width="180" style="display: block; outline: none; border: none; text-decoration: none;" />` : '<h1 style="color: #2da84a; font-size: 28px; margin: 0;">AgriFather</h1>'}
                       </td>
                     </tr>
                   </table>
                 </div>
                 <h2 style="color: #1f2937; margin-bottom: 12px; font-size: 22px; font-weight: 700;">Verify Your Account</h2>
-                <p style="color: #4b5563; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Hello! Use the following one-time password (OTP) to securely <b>${purpose === 'login' ? 'log in to' : 'register with'}</b> AgriFather.</p>
+                <p style="color: #4b5563; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Hello! Use the following one-time password (OTP) to securely <b>${purpose === 'login' ? 'log in to' : purpose === 'forgot-password' ? 'reset password for' : 'register with'}</b> AgriFather.</p>
                 <div style="background-color: #ffffff; border: 2px solid #2da84a; border-radius: 12px; padding: 24px; display: inline-block; margin-bottom: 30px;">
                   <span style="font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 800; letter-spacing: 12px; color: #2da84a;">${otp}</span>
                 </div>
@@ -200,7 +218,13 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
                   © ${new Date().getFullYear()} AgriFather — Empowering Indian Farmers
                 </div>
               </div>
-            `
+            `,
+            attachment: logoBase64 ? [
+              {
+                content: logoBase64,
+                name: "logo_small.png"
+              }
+            ] : undefined
           })
         });
 
@@ -233,7 +257,7 @@ app.post('/api/auth/send-otp-email', async (req, res) => {
                 <img src="cid:logo.png" alt="AgriFather" style="width:140px;height:auto;" />
               </div>
               <h2 style="color:#2d7a23;margin-bottom:8px;text-align:center;">AgriFather</h2>
-              <p style="color: #4b5563; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Hello! Use the following one-time password (OTP) to securely <b>${purpose === 'login' ? 'log in to' : 'register with'}</b> AgriFather.</p>
+              <p style="color: #4b5563; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Hello! Use the following one-time password (OTP) to securely <b>${purpose === 'login' ? 'log in to' : purpose === 'forgot-password' ? 'reset password for' : 'register with'}</b> AgriFather.</p>
               <div style="background-color: #ffffff; border: 2px solid #2da84a; border-radius: 12px; padding: 24px; display: inline-block; margin-bottom: 30px;">
                 <span style="font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 800; letter-spacing: 12px; color: #2da84a;">${otp}</span>
               </div>
@@ -301,7 +325,15 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
 
     // Store user info in response (exclude password)
-    const userData = { _id: user._id, name: user.name, mobile: user.mobile, crop: user.crop, profilePic: user.profilePic || '' };
+    const userData = { 
+      _id: user._id, 
+      name: user.name, 
+      mobile: user.mobile, 
+      crop: user.crop, 
+      profilePic: user.profilePic || '',
+      chatTokensUsed: user.chatTokensUsed || 0,
+      imageTokensUsed: user.imageTokensUsed || 0
+    };
     res.status(200).json({ message: 'Login successful', token, user: userData });
   } catch (err) {
     console.error(err);
@@ -388,23 +420,31 @@ app.delete('/api/auth/profile', requireAuth, async (req, res) => {
 app.post('/api/auth/verify-otp', async (req, res) => {
   try {
     const { email, mobile, otp, purpose } = req.body;
-    // support email (new) or mobile (old) verification
+    console.log(`[Verify OTP] Identifier: ${email || mobile} | OTP: ${otp} | Purpose: ${purpose}`);
+    
     const identifier = email || mobile;
     const record = otpStore[identifier];
 
     if (!record) {
+      console.warn(`[Verify OTP] No record found for ${identifier}`);
       return res.status(400).json({ message: 'No OTP requested for this email/number. Please request again.' });
     }
     if (Date.now() > record.expiresAt) {
+      console.warn(`[Verify OTP] OTP expired for ${identifier}`);
       delete otpStore[identifier];
       return res.status(400).json({ message: 'OTP expired. Please request a new one.' });
     }
     if (record.otp !== otp) {
+      console.warn(`[Verify OTP] Incorrect OTP for ${identifier}. Expected: ${record.otp}, Got: ${otp}`);
       return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
     }
 
-    // OTP is valid — clear it
-    delete otpStore[identifier];
+    console.log(`[Verify OTP] Success for ${identifier}`);
+    // OTP is valid — clear it ONLY if not for forgot-password
+    // (forgot-password needs it for the next reset step)
+    if (purpose !== 'forgot-password') {
+      delete otpStore[identifier];
+    }
 
     let user;
     if (email) user = await User.findOne({ email });
@@ -416,6 +456,42 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     }
     
     res.status(200).json({ message: 'OTP verified successfully', token, user });
+  } catch (err) {
+    console.error('[Verify OTP] Server Error:', err);
+    res.status(500).json({ message: 'Server error: ' + err.message });
+  }
+});
+
+// ── Reset Password ────────────────────────────────────────────────────────────
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP, and new password are required' });
+    }
+
+    const record = otpStore[email];
+    if (!record || record.purpose !== 'forgot-password') {
+      return res.status(400).json({ message: 'No reset request found for this email. Please try again.' });
+    }
+    if (Date.now() > record.expiresAt) {
+      delete otpStore[email];
+      return res.status(400).json({ message: 'OTP expired. Please request a new one.' });
+    }
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    delete otpStore[email];
+
+    res.status(200).json({ message: 'Password reset successfully. You can now login.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -620,37 +696,82 @@ function isAgricultureRelated(text) {
 // ── Mandi Rates API Integration ───────────────────────────────────────────────
 async function fetchMandiRatesContext(message) {
   const lower = message.toLowerCase();
-  const isAskingPrice = ['mandi', 'price', 'rate', 'bhav', 'daam', 'market', 'cost'].some(w => lower.includes(w));
+  const priceKeywords = ['mandi', 'price', 'rate', 'bhav', 'daam', 'market', 'cost', 'keemat', 'mol', 'dam', 'bazaar', 'bazar', 'wholesale', 'retail'];
+  const isAskingPrice = priceKeywords.some(w => lower.includes(w));
   if (!isAskingPrice) return null;
 
-  // 1. Extract Crop/Fruit
+  // 1. Extract Crop/Fruit — expanded list with Hindi synonyms
   const cropsList = [
-    'wheat','gehu','cotton','kapas','soybean','rice','chawal','paddy','dhan','maize','makka',
+    'wheat','gehu','cotton','kapas','soybean','soya','rice','chawal','paddy','dhan','maize','makka',
     'onion','pyaj','tomato','tamatar','potato','aloo','apple','seb','mango','aam','banana','kela',
-    'grapes','angoor','pomegranate','anar','orange','santra','lemon','nimbu','chilli','mirchi'
+    'grapes','angoor','pomegranate','anar','orange','santra','lemon','nimbu','chilli','mirchi',
+    'garlic','lehsun','lahsun','ginger','adrak','turmeric','haldi','mustard','sarson','moong','urad',
+    'arhar','toor','tur','chana','gram','masoor','groundnut','mungfali','sugarcane','ganna',
+    'coconut','nariyal','papaya','guava','amrud','watermelon','tarbooj','peas','matar',
+    'cauliflower','phool gobhi','cabbage','patta gobhi','brinjal','baingan','ladyfinger','bhindi',
+    'carrot','gajar','radish','mooli','spinach','palak','coriander','dhaniya','cumin','jeera',
+    'saffron','kesar','cardamom','elaichi','pepper','kali mirch','cashew','kaju','almond','badam',
+    'fertilizer','urea','dap','npk','potash'
   ];
   let crop = cropsList.find(c => lower.includes(c)) || 'Commodity';
   
-  // Mapping synonyms to API standard names
+  // Mapping synonyms to API standard commodity names
   const apiMapping = {
     'apple': 'Apple', 'seb': 'Apple',
     'mango': 'Mango', 'aam': 'Mango',
     'wheat': 'Wheat', 'gehu': 'Wheat',
     'onion': 'Onion', 'pyaj': 'Onion',
-    'tomato': 'Tomato', 'tamatar': 'Tomato'
+    'tomato': 'Tomato', 'tamatar': 'Tomato',
+    'potato': 'Potato', 'aloo': 'Potato',
+    'rice': 'Rice', 'chawal': 'Rice', 'paddy': 'Paddy(Dhan)(Common)', 'dhan': 'Paddy(Dhan)(Common)',
+    'banana': 'Banana', 'kela': 'Banana',
+    'cotton': 'Cotton', 'kapas': 'Cotton',
+    'soybean': 'Soyabean', 'soya': 'Soyabean',
+    'maize': 'Maize', 'makka': 'Maize',
+    'garlic': 'Garlic', 'lehsun': 'Garlic', 'lahsun': 'Garlic',
+    'ginger': 'Ginger(Green)', 'adrak': 'Ginger(Green)',
+    'turmeric': 'Turmeric', 'haldi': 'Turmeric',
+    'mustard': 'Mustard', 'sarson': 'Mustard',
+    'chana': 'Bengal Gram(Gram)(Whole)', 'gram': 'Bengal Gram(Gram)(Whole)',
+    'arhar': 'Arhar (Tur/Red Gram)(Whole)', 'toor': 'Arhar (Tur/Red Gram)(Whole)', 'tur': 'Arhar (Tur/Red Gram)(Whole)',
+    'moong': 'Green Gram (Moong)(Whole)', 'urad': 'Black Gram (Urd Beans)(Whole)',
+    'masoor': 'Masoor Dal', 'lemon': 'Lemon', 'nimbu': 'Lemon',
+    'orange': 'Orange', 'santra': 'Orange',
+    'grapes': 'Grapes', 'angoor': 'Grapes',
+    'pomegranate': 'Pomegranate', 'anar': 'Pomegranate',
+    'chilli': 'Chillies (Green)', 'mirchi': 'Chillies (Green)',
+    'groundnut': 'Groundnut', 'mungfali': 'Groundnut',
+    'sugarcane': 'Sugarcane', 'ganna': 'Sugarcane',
+    'coconut': 'Coconut', 'nariyal': 'Coconut',
+    'peas': 'Peas(Green)', 'matar': 'Peas(Green)',
+    'cauliflower': 'Cauliflower', 'phool gobhi': 'Cauliflower',
+    'cabbage': 'Cabbage', 'patta gobhi': 'Cabbage',
+    'brinjal': 'Brinjal', 'baingan': 'Brinjal',
+    'ladyfinger': 'Bhindi(Ladies Finger)', 'bhindi': 'Bhindi(Ladies Finger)',
+    'carrot': 'Carrot', 'gajar': 'Carrot',
+    'radish': 'Raddish', 'mooli': 'Raddish',
+    'spinach': 'Spinach', 'palak': 'Spinach',
+    'guava': 'Guava', 'amrud': 'Guava',
+    'papaya': 'Papaya',
+    'cumin': 'Cummin Seed(Jeera)', 'jeera': 'Cummin Seed(Jeera)',
+    'coriander': 'Coriander(Leaves)', 'dhaniya': 'Coriander(Leaves)',
+    'urea': 'Urea', 'dap': 'DAP', 'npk': 'NPK', 'potash': 'Potash',
+    'fertilizer': 'Urea'
   };
   const apiCropName = apiMapping[crop.toLowerCase()] || crop.charAt(0).toUpperCase() + crop.slice(1);
 
-  // 2. Extract State
+  // 2. Extract State — expanded list
   const states = [
     'Maharashtra','Gujarat','Rajasthan','Punjab','Haryana','Uttar Pradesh','Madhya Pradesh',
-    'Karnataka','Tamil Nadu','Andhra Pradesh','Telangana','Kerala','Bihar','West Bengal'
+    'Karnataka','Tamil Nadu','Andhra Pradesh','Telangana','Kerala','Bihar','West Bengal',
+    'Odisha','Chhattisgarh','Jharkhand','Assam','Uttarakhand','Himachal Pradesh',
+    'Jammu and Kashmir','Goa','Tripura','Manipur','Meghalaya','Mizoram','Nagaland','Sikkim',
+    'Arunachal Pradesh','Delhi','Chandigarh','Puducherry'
   ];
   let state = states.find(s => lower.includes(s.toLowerCase()));
 
   try {
-    // 3. Build API URL with filters
-    let url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b&format=json&limit=10`;
+    let url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b&format=json&limit=15`;
     
     if (apiCropName !== 'Commodity') {
       url += `&filters[commodity]=${encodeURIComponent(apiCropName)}`;
@@ -659,38 +780,184 @@ async function fetchMandiRatesContext(message) {
       url += `&filters[state]=${encodeURIComponent(state)}`;
     }
 
-    console.log(`[Chat Mandi] Fetching live data for: ${apiCropName} in ${state || 'All India'}`);
+    console.log(`[Mandi API] Fetching: ${apiCropName} in ${state || 'All India'}`);
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
       if (data && data.records && data.records.length > 0) {
         const summary = data.records.map(r => 
-          `State: ${r.state}, Market: ${r.market}, Commodity: ${r.commodity}, Variety: ${r.variety}, Price: ₹${r.modal_price}/q`
-        ).join(' | ');
+          `${r.state} → ${r.market}: ${r.commodity} (${r.variety || 'Standard'}) = Min ₹${r.min_price} / Max ₹${r.max_price} / Modal ₹${r.modal_price} per quintal [Date: ${r.arrival_date || 'Today'}]`
+        ).join('\n');
         
-        return `[SYSTEM ALERT: Real-time Mandi API Data -> ${summary}. Use this latest data to answer the user accurately. If specific states were asked, prioritize them.]`;
+        return `[SYSTEM ALERT: LIVE MANDI PRICE DATA from Government of India (data.gov.in) →\n${summary}\nIMPORTANT: Present this data in a clean table format to the user. Show State, Market, Commodity, Min/Max/Modal Price. Always mention this is REAL-TIME government data.]`;
       }
     }
   } catch (err) {
     console.error('Mandi API fetch failed', err);
   }
 
-  return `[SYSTEM ALERT: Mandi API Data -> We couldn't find live data for "${apiCropName}" right now. Provide recent market estimates for "${apiCropName}" based on your general knowledge of Indian agriculture.]`;
+  return `[SYSTEM ALERT: Mandi API → No live data found for "${apiCropName}" right now. Provide recent market estimates for "${apiCropName}" based on your knowledge of Indian agriculture. Mention approximate price ranges per quintal.]`;
 }
+
+// ── Government Agriculture Schemes Context ────────────────────────────────────
+function getGovSchemeContext(message) {
+  const lower = message.toLowerCase();
+  const schemeKeywords = ['scheme', 'yojana', 'subsidy', 'government', 'sarkari', 'sarkar', 'pm kisan', 'pmkisan', 'pmfby', 'kcc', 'kisan credit', 'fasal bima', 'soil health', 'e-nam', 'enam', 'neem coated', 'msp', 'minimum support', 'pradhan mantri', 'grant', 'loan', 'rin', 'help from government', 'benefit', 'labh', 'sahay'];
+  const isAskingScheme = schemeKeywords.some(w => lower.includes(w));
+  if (!isAskingScheme) return null;
+
+  return `[SYSTEM CONTEXT: INDIAN GOVERNMENT AGRICULTURE SCHEMES DATABASE →
+
+**PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)**
+- ₹6,000/year in 3 installments of ₹2,000 each directly to farmer's bank account
+- Eligibility: All landholding farmer families
+- Register: pmkisan.gov.in | Helpline: 155261
+- Status check: pmkisan.gov.in/beneficiarystatus
+
+**PMFBY (Pradhan Mantri Fasal Bima Yojana)**
+- Crop insurance at 2% premium for Kharif, 1.5% for Rabi, 5% for commercial/horticultural
+- Covers: Natural calamities, pests, diseases
+- Apply through: Bank/CSC/pmfby.gov.in
+- Claim within 72 hours of crop damage
+
+**KCC (Kisan Credit Card)**
+- Up to ₹3 lakh at 4% interest (with govt subsidy)
+- Covers: Crop production, animal husbandry, fisheries
+- Apply at: Any bank branch with land documents
+- Insurance coverage included
+
+**Soil Health Card Scheme**
+- Free soil testing every 2 years
+- Recommendations for fertilizer usage
+- Apply through: soilhealth.dac.gov.in
+
+**e-NAM (National Agriculture Market)**
+- Online trading platform for agricultural commodities
+- Transparent price discovery
+- Portal: enam.gov.in
+
+**PM Kisan MAN-Dhan (Pension Scheme)**
+- ₹3,000/month pension after age 60
+- Contribution: ₹55-200/month based on age
+- For small & marginal farmers (18-40 years)
+
+**Sub Mission on Agricultural Mechanization (SMAM)**
+- 50-80% subsidy on farm equipment
+- Apply at: agrimachinery.nic.in
+
+**MSP (Minimum Support Price) 2024-25**
+- Wheat: ₹2,275/q | Rice: ₹2,300/q | Cotton: ₹7,121/q
+- Mustard: ₹5,650/q | Chana: ₹5,440/q | Soybean: ₹4,892/q
+
+**Paramparagat Krishi Vikas Yojana (PKVY)**
+- ₹50,000/ha for 3 years for organic farming
+- Cluster-based organic farming support
+
+**RKVY (Rashtriya Krishi Vikas Yojana)**
+- Flexi-fund for state-specific agriculture development
+- Covers infrastructure, technology, innovation
+
+IMPORTANT: Always provide the official website, helpline number, and eligibility criteria. If the user asks about a specific scheme, give step-by-step application process. Mention state-specific variations where applicable.]`;
+}
+
+// ── Direct Mandi Prices API ───────────────────────────────────────────────────
+// GET /api/mandi?commodity=Onion&state=Maharashtra&limit=20
+app.get('/api/mandi', async (req, res) => {
+  try {
+    const { commodity, state, limit = 15 } = req.query;
+    let url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b&format=json&limit=${limit}`;
+    if (commodity) url += `&filters[commodity]=${encodeURIComponent(commodity)}`;
+    if (state) url += `&filters[state]=${encodeURIComponent(state)}`;
+
+    console.log(`[Mandi Direct] Fetching: ${commodity || 'All'} in ${state || 'All India'}`);
+    const apiRes = await fetch(url);
+    const data = await apiRes.json();
+    res.json({
+      success: true,
+      total: data.total || 0,
+      records: (data.records || []).map(r => ({
+        state: r.state,
+        district: r.district,
+        market: r.market,
+        commodity: r.commodity,
+        variety: r.variety,
+        minPrice: r.min_price,
+        maxPrice: r.max_price,
+        modalPrice: r.modal_price,
+        date: r.arrival_date
+      }))
+    });
+  } catch (err) {
+    console.error('[Mandi Direct] Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch mandi data' });
+  }
+});
 
 // ── OpenRouter: Chat ──────────────────────────────────────────────────────────────
 // POST /api/chat  { message: string, history: [{role, text}] }
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history = [], responseStyle = 'Detailed', language = 'Hindi' } = req.body;
+    const { message, history = [], responseStyle = 'Detailed', language = 'Hindi', preferredModel = 'auto' } = req.body;
     if (!message) return res.status(400).json({ message: 'Message is required' });
 
-    let styleNote = 'Give a detailed, helpful answer.';
-    if (responseStyle === 'Brief') styleNote = 'Keep your answer brief — 3 to 4 sentences with bullet points.';
-    if (responseStyle === 'Expert') styleNote = 'Give a technical, expert-level answer with scientific terms and exact dosages.';
+    // Auth & Token Tracking
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: 'Authentication required' });
+
+    let user = null;
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const decoded = jwt.verify(token, JWT_SECRET);
+      user = await User.findById(decoded.id);
+    } catch (e) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+      // Unlimited chats for everyone
+      /*
+      const hasPro = await Subscription.findOne({ 
+        userId: user._id, 
+        status: 'active', 
+        expiresAt: { $gt: new Date() } 
+      });
+
+      if (!hasPro) {
+        const MAX_CHAT = 10;
+        const WINDOW = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+
+        // Reset window if needed
+        const lastReset = user.lastChatReset ? new Date(user.lastChatReset).getTime() : 0;
+        if (now - lastReset > WINDOW) {
+          user.chatTokensUsed = 0;
+          user.lastChatReset = new Date(now);
+        }
+
+        if ((user.chatTokensUsed || 0) >= MAX_CHAT) {
+          return res.status(403).json({ 
+            message: 'Daily message limit reached', 
+            reason: 'limit',
+            resetAt: new Date(new Date(user.lastChatReset).getTime() + WINDOW)
+          });
+        }
+
+        user.chatTokensUsed = (user.chatTokensUsed || 0) + 1;
+        await user.save();
+      }
+      */
+
+    let styleNote = 'Provide a HIGHLY DETAILED, comprehensive, and professional answer. Explain step-by-step with reasons and clear instructions.';
+    if (responseStyle === 'Brief') styleNote = 'Keep your answer extremely brief and to the point — strictly 3 to 4 short sentences with bullet points.';
+    if (responseStyle === 'Expert') styleNote = 'Provide a HIGHLY TECHNICAL, EXPERT-LEVEL response. Use proper agricultural terminology, scientific names, exact dosages, and professional agronomy concepts. Ensure maximum detail and depth.';
 
     const mandiContext = await fetchMandiRatesContext(message);
-    const userContent = mandiContext ? `${message}\n\n[Live market data: ${mandiContext}]` : message;
+    const schemeContext = getGovSchemeContext(message);
+    
+    let userContent = `[CRITICAL INSTRUCTION: Analyze the language and script of the user's query below. You MUST reply ONLY in that exact same language and script. If they write in English, reply in pure English. If they write in Hindi (Devanagari), reply in pure Hindi. Do not mix languages.]\n\n[STYLE INSTRUCTION: ${styleNote}]\n\n[USER QUERY]: ${message}`;
+    
+    if (mandiContext) userContent += `\n\n[Live market data: ${mandiContext}]`;
+    if (schemeContext) userContent += `\n\n[Gov Scheme Data: ${schemeContext}]`;
 
     // KEY FIX: Use a completely neutral system prompt without brand name.
     // Models hallucinate refusals because they were trained on similar branded apps.
@@ -702,15 +969,17 @@ government farm schemes (PM Kisan, PMFBY, KCC), livestock, and horticulture.
 
 RULES:
 - ALWAYS answer farming questions. NEVER refuse.
-- Reply in the SAME language the user writes in (Hindi, Marathi, English, Punjabi, Gujarati, etc.).
+- CRITICAL: You MUST detect the language and script of the user's message and reply in the EXACT SAME language and script.
+  * If the user asks in English, reply ONLY in English.
+  * If the user asks in Hindi (Devanagari script), reply ONLY in Hindi (Devanagari script).
+  * If the user asks in Hinglish (Hindi written in English alphabet), reply in Hinglish.
+  * Same rule applies for Marathi, Gujarati, Punjabi, etc.
 - If completely off-topic (movies/sports/coding), say you only cover farming.
-- ${styleNote}
-- Use bold for key terms, bullet points for steps, headings for long answers. End with a farming emoji.`;
+- Maintain a highly formal, professional, and respectful tone. Do NOT use conversational fillers or emojis.
+- Use bold for key terms, bullet points for steps, headings for long answers.`;
 
     const chatMessages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: 'Aap kya kar sakte hain?' },
-      { role: 'assistant', content: 'Main ek krishi visheshagya hoon. Fasal, beej, mitti, khad, keeda, mandi bhav, sarkari yojana — sab poochh sakte ho. 🌾' },
       ...history.map(h => ({
         role: h.role === 'user' ? 'user' : 'assistant',
         content: h.text
@@ -737,15 +1006,59 @@ RULES:
     };
 
     const callModel = async (model, msgs, temp = 0.5) => {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
+      let url = 'https://openrouter.ai/api/v1/chat/completions';
+      let headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
+        'X-Title': 'AgriFather'
+      };
+
+      let actualModel = model;
+
+      if (model.startsWith('groq:')) {
+        // Groq Cloud — free tier
+        actualModel = model.replace('groq:', '');
+        url = 'https://api.groq.com/openai/v1/chat/completions';
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        };
+      } else if (model.startsWith('openrouter:')) {
+        // OpenRouter — free models
+        actualModel = model.replace('openrouter:', '');
+        url = 'https://openrouter.ai/api/v1/chat/completions';
+        headers = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
           'X-Title': 'AgriFather'
-        },
-        body: JSON.stringify({ model, messages: msgs, temperature: temp, max_tokens: 1024 })
+        };
+      } else if (model.startsWith('deepseek:')) {
+        actualModel = model.replace('deepseek:', '');
+        url = 'https://api.deepseek.com/chat/completions';
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        };
+      } else if (model.startsWith('grok:')) {
+        actualModel = model.replace('grok:', '');
+        url = 'https://api.x.ai/v1/chat/completions';
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+        };
+      } else if (model.startsWith('hf:')) {
+        actualModel = model.replace('hf:', '');
+        url = `https://api-inference.huggingface.co/models/${actualModel}/v1/chat/completions`;
+        headers = { 'Content-Type': 'application/json' };
+      }
+      // else: treat as OpenRouter model ID directly
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model: actualModel, messages: msgs, temperature: temp, max_tokens: 1024 })
       });
       if (!response.ok) {
         const errText = await response.text();
@@ -756,14 +1069,22 @@ RULES:
       throw new Error('Empty response from model');
     };
 
-    const modelsToTry = [
-      'meta-llama/llama-3.3-70b-instruct:free',       // Best: 70B, excellent instruction following
-      'openai/gpt-oss-120b:free',                      // GPT-class large model
-      'openai/gpt-oss-20b:free',                       // GPT-class medium model
-      'qwen/qwen3-next-80b-a3b-instruct:free',         // Qwen3 80B
-      'google/gemma-4-26b-a4b-it:free',                // Gemma4 26B
-      'meta-llama/llama-3.2-3b-instruct:free',         // Fallback small model
+    let modelsToTry = [
+      'groq:llama-3.3-70b-versatile',
+      'groq:llama-3.1-8b-instant',
+      'groq:qwen-qwq-32b',
+      'openrouter:google/gemma-3-27b-it:free',
+      'openrouter:google/gemma-3-4b-it:free',
+      'openrouter:nvidia/llama-3.1-nemotron-70b-instruct:free',
+      'openrouter:mistralai/mistral-small-3.1-24b-instruct:free',
+      'deepseek:deepseek-chat'
     ];
+
+    // If user selected a specific model, prioritize it
+    if (preferredModel && preferredModel !== 'auto') {
+      modelsToTry = [preferredModel, ...modelsToTry.filter(m => m !== preferredModel)];
+      console.log(`[Chat] User preferred model: ${preferredModel}`);
+    }
 
     let reply = null;
     let lastError = null;
@@ -794,7 +1115,10 @@ RULES:
     }
 
     if (reply) {
-      res.status(200).json({ reply });
+      res.status(200).json({ 
+        reply, 
+        chatTokensUsed: user ? user.chatTokensUsed : undefined 
+      });
     } else {
       res.status(500).json({ message: 'AI service is temporarily unavailable. Please try again in a moment.' });
     }
@@ -810,6 +1134,50 @@ RULES:
 app.post('/api/scan', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
+
+    // Auth & Token Tracking
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: 'Authentication required' });
+
+    let user = null;
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const decoded = jwt.verify(token, JWT_SECRET);
+      user = await User.findById(decoded.id);
+    } catch (e) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const hasPro = await Subscription.findOne({ 
+      userId: user._id, 
+      status: 'active', 
+      expiresAt: { $gt: new Date() } 
+    });
+
+    if (!hasPro) {
+      const MAX_IMAGE = 5;
+      const WINDOW = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+
+      const lastReset = user.lastImageReset ? new Date(user.lastImageReset).getTime() : 0;
+      if (now - lastReset > WINDOW) {
+        user.imageTokensUsed = 0;
+        user.lastImageReset = new Date(now);
+      }
+
+      if ((user.imageTokensUsed || 0) >= MAX_IMAGE) {
+        return res.status(403).json({ 
+          message: 'Image analysis limit reached (5 per 24h)', 
+          reason: 'limit',
+          resetAt: new Date((user.lastImageReset ? new Date(user.lastImageReset).getTime() : now) + WINDOW)
+        });
+      }
+
+      user.imageTokensUsed = (user.imageTokensUsed || 0) + 1;
+      await user.save();
+    }
 
     const userQuestion = req.body.question ? req.body.question.trim() : '';
 
@@ -830,8 +1198,11 @@ If the image is not related to agriculture, politely inform the user that you ar
     const imageUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
     const modelsToTry = [
-      'google/gemini-2.0-flash-exp:free',
-      'google/gemini-flash-1.5:free'
+      'openrouter:google/gemma-3-27b-it:free',
+      'openrouter:google/gemma-3-4b-it:free',
+      'groq:llama-3.3-70b-versatile',
+      'openrouter:nvidia/llama-3.1-nemotron-70b-instruct:free',
+      'deepseek:deepseek-chat'
     ];
 
     let analysis = null;
@@ -841,16 +1212,36 @@ If the image is not related to agriculture, politely inform the user that you ar
       try {
         console.log(`[Scan] Requesting analysis from: ${model}...`);
         const startTime = Date.now();
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
+        let url = 'https://openrouter.ai/api/v1/chat/completions';
+        let headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
+          'X-Title': 'AgriFather AI'
+        };
+
+        let actualModel = model;
+        if (model.startsWith('grok:')) {
+          actualModel = model.replace('grok:', '');
+          url = 'https://api.x.ai/v1/chat/completions';
+          headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
-            'X-Title': 'AgriFather AI'
-          },
+            'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+          };
+        } else if (model.startsWith('deepseek:')) {
+          actualModel = model.replace('deepseek:', '');
+          url = 'https://api.deepseek.com/chat/completions';
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+          };
+        }
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
           body: JSON.stringify({
-            model: model,
+            model: actualModel,
             messages: [
               {
                 role: 'user',
@@ -890,7 +1281,10 @@ If the image is not related to agriculture, politely inform the user that you ar
       throw new Error(lastError ? lastError.message : 'All vision models failed');
     }
 
-    res.status(200).json({ analysis });
+    res.status(200).json({ 
+      analysis, 
+      imageTokensUsed: user ? user.imageTokensUsed : undefined 
+    });
   } catch (err) {
     console.error('OpenRouter scan error:', err.message);
     res.status(500).json({ message: 'AI scan error: ' + (err.message || 'Unknown error') });

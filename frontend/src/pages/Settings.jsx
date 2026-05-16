@@ -97,11 +97,9 @@ const Settings = () => {
                 value={langLabel}
                 onChange={(e) => setLang(e.target.value)}
               >
-                <option value="Hindi">Hindi</option>
-                <option value="English">English</option>
-                <option value="Marathi">Marathi</option>
-                <option value="Punjabi">Punjabi</option>
-                <option value="Gujarati">Gujarati</option>
+                {['Hindi', 'English', 'Marathi', 'Punjabi', 'Gujarati', 'Telugu', 'Tamil', 'Kannada', 'Bengali', 'Malayalam'].map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -211,18 +209,6 @@ const Settings = () => {
             </div>
             <span className="setting-arrow">›</span>
           </div>
-          <div className="setting-card setting-card-btn" onClick={() => setModal('grievance')}>
-            <div className="setting-left">
-              <div className="setting-icon-wrapper">
-                <Shield size={20} color="#2da84a" />
-              </div>
-              <div className="setting-text">
-                <h4 className="setting-title hindi-text">Grievance Redressal</h4>
-                <p className="setting-subtitle">Contact Grievance Officer</p>
-              </div>
-            </div>
-            <span className="setting-arrow">›</span>
-          </div>
         </div>
 
         <div className="settings-section">
@@ -239,7 +225,7 @@ const Settings = () => {
 
         <div className="footer-credits">
           <p>AgriFather v1.0.0</p>
-          <p>Made with 🌾 for Indian Farmers</p>
+          <p>made with love for farmers</p>
         </div>
       </div>
 
@@ -268,18 +254,7 @@ const Settings = () => {
                 <p><strong>Q: Who do I contact for help?</strong><br />Email us at <strong>support@agrifather.in</strong> or call <strong>1800-XXX-XXXX</strong>.</p>
               </>
             )}
-            {modal === 'grievance' && (
-              <>
-                <h3>Grievance Redressal / शिकायत निवारण</h3>
-                <p>In accordance with Information Technology Act, 2000 and rules made there under, the name and contact details of the Grievance Officer are provided below:</p>
-                <div style={{ background: 'var(--card-bg)', padding: '12px', borderRadius: '8px', marginTop: '12px', border: '1px solid var(--border-color)' }}>
-                  <p><strong>Name:</strong> Mr. Sharma</p>
-                  <p><strong>Email:</strong> grievance@agrifather.in</p>
-                  <p><strong>Phone:</strong> 1800-XXX-XXXX (Mon-Fri, 9AM-6PM)</p>
-                  <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>We acknowledge all grievances within 24 hours and resolve them within 15 days.</p>
-                </div>
-              </>
-            )}
+
           </div>
         </div>
       )}

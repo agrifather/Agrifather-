@@ -26,11 +26,51 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Subscription from './pages/Subscription';
+import ResetPassword from './pages/ResetPassword';
+
+import API_BASE from './utils/api';
 
 // Smart root: if user is already logged in, go to /home, else show Landing page
 const RootRedirect = () => {
   const token = localStorage.getItem('token');
   return token ? <Navigate to="/home" replace /> : <Landing />;
+};
+
+// Sync user data with backend on every app load/refresh
+const UserSync = ({ children }) => {
+  const [synced, setSynced] = React.useState(false);
+
+  React.useEffect(() => {
+    const sync = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            // Preserve profilePic if backend returns something different or null
+            const oldUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const newUser = { ...oldUser, ...data.user };
+            localStorage.setItem('user', JSON.stringify(newUser));
+            window.dispatchEvent(new Event('user-synced'));
+          } else if (res.status === 401) {
+            // Token expired or invalid
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        } catch (err) {
+          console.error('User sync failed:', err);
+        }
+      }
+      setSynced(true);
+    };
+    sync();
+  }, []);
+
+  // Show nothing or splash while syncing if desired, but here we just pass through
+  return children;
 };
 
 function App() {
@@ -40,8 +80,9 @@ function App() {
         <NotificationProvider>
           <ChatProvider>
             <ScanProvider>
-              <Router>
-              <Routes>
+              <UserSync>
+                <Router>
+                <Routes>
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="/splash" element={<Splash />} />
                 <Route path="/verify" element={<Welcome />} />
@@ -49,6 +90,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/verify-otp" element={<OtpVerify />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/scan" element={<Scan />} />
@@ -66,7 +108,8 @@ function App() {
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Router>
-          </ScanProvider>
+          </UserSync>
+        </ScanProvider>
         </ChatProvider>
       </NotificationProvider>
       </LanguageProvider>

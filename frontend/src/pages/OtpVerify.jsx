@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft } from 'lucide-react';
 import API_BASE from '../utils/api';
 import './OtpVerify.css';
 
@@ -56,13 +56,12 @@ const OtpVerify = () => {
     }
   };
 
-  const maskedMobile = mobile
-    ? `+91 ${mobile.slice(0, 2)}XXX-XXX${mobile.slice(-2)}`
-    : email 
-      ? email.replace(/(.{2})(.*)(?=@)/,
-          (gp1, gp2, gp3) => { 
-            for(let i = 0; i < gp3.length; i++) gp2+= '*'; return gp2; 
-          }) 
+  const maskedIdentifier = email 
+    ? email.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => { 
+        for(let i = 0; i < gp3.length; i++) gp2+= '*'; return gp2; 
+      })
+    : mobile 
+      ? `+91 ${mobile.slice(0, 2)}XXX-XXX${mobile.slice(-2)}`
       : '';
 
   const handleVerify = async (e) => {
@@ -91,7 +90,8 @@ const OtpVerify = () => {
           }
           navigate('/home');
         } else if (purpose === 'forgot-password') {
-          navigate('/home'); // redirect after password reset success
+          // Pass email and verified OTP to reset-password page
+          navigate('/reset-password', { state: { email, otp: otpCode } });
         } else {
           navigate('/home');
         }
@@ -142,11 +142,11 @@ const OtpVerify = () => {
 
         <div className="otp-header">
           <div className="otp-icon-ring">
-            <ShoppingBag size={32} color="#5bb349" />
+            <Mail size={32} className="otp-icon" />
           </div>
           <h1 className="otp-title">Enter OTP</h1>
-          {maskedMobile && (
-            <p className="otp-subtitle">We sent a code to {maskedMobile}</p>
+          {maskedIdentifier && (
+            <p className="otp-subtitle">We sent a code to {maskedIdentifier}</p>
           )}
           <p className="otp-subtitle-hi">OTP भेजा गया है</p>
         </div>

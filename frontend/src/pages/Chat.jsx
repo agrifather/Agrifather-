@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Leaf, Loader, Trash2, Camera, ArrowUp, Crown, Mic, MicOff, Zap, BookOpen, GraduationCap, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { 
+  Send, Leaf, Loader, Trash2, Camera, ArrowUp, Crown, Mic, MicOff, Zap, BookOpen, 
+  GraduationCap, ThumbsUp, ThumbsDown, Plus, ChevronDown, AudioLines, Check, X 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { loadHistory, appendMessages, clearHistory } from '../utils/chatHistory';
@@ -99,11 +102,32 @@ const Chat = () => {
   const { messages, loading, chatsLeft, chatLimitReached, sendMessage, clearChat } = useChat();
   const { t, langFullName } = useLanguage(); // get translations and language name
   const [input,    setInput]    = useState('');
+
+  // Protect route
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (!user) navigate('/login');
+  }, [navigate]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [responseStyle, setResponseStyle] = useState(() => getUserItem('af_responseStyle', 'Detailed'));
   const [isListening, setIsListening] = useState(false);
   const [micError, setMicError] = useState('');
   const [feedback, setFeedback] = useState({}); // { [msgId]: 'up' | 'down' }
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(() => getUserItem('af_selectedModel', 'auto'));
+
+  // Available AI models — free tiers from Groq, OpenRouter, HuggingFace
+  const AI_MODELS = [
+    { id: 'auto', label: 'Auto (Best)', desc: 'Tries all models, picks first success' },
+    { id: 'groq:llama-3.3-70b-versatile', label: 'Llama 3.3 70B', desc: 'Groq • Best quality' },
+    { id: 'groq:llama-3.1-8b-instant', label: 'Llama 3.1 8B', desc: 'Groq • Ultra fast' },
+    { id: 'groq:qwen-qwq-32b', label: 'Qwen QwQ 32B', desc: 'Groq • Strong reasoning' },
+    { id: 'openrouter:google/gemma-3-27b-it:free', label: 'Gemma 3 27B', desc: 'OpenRouter • Free' },
+    { id: 'openrouter:google/gemma-3-4b-it:free', label: 'Gemma 3 4B', desc: 'OpenRouter • Free fast' },
+    { id: 'openrouter:nvidia/llama-3.1-nemotron-70b-instruct:free', label: 'Nemotron 70B', desc: 'OpenRouter • Free' },
+    { id: 'openrouter:mistralai/mistral-small-3.1-24b-instruct:free', label: 'Mistral Small 24B', desc: 'OpenRouter • Free' },
+    { id: 'deepseek:deepseek-chat', label: 'DeepSeek Chat', desc: 'DeepSeek API' },
+  ];
   const messagesEndRef   = useRef(null);
   const messagesAreaRef  = useRef(null);
   const inputRef         = useRef(null);
@@ -129,6 +153,11 @@ const Chat = () => {
   useEffect(() => {
     setUserItem('af_responseStyle', responseStyle);
   }, [responseStyle]);
+
+  // Save selected model preference
+  useEffect(() => {
+    setUserItem('af_selectedModel', selectedModel);
+  }, [selectedModel]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -264,7 +293,7 @@ const Chat = () => {
     scrollToBottom(true);
 
     // Pass langFullName to backend to enforce response language
-    const result = await sendMessage(text, responseStyle, langFullName);
+    const result = await sendMessage(text, responseStyle, langFullName, selectedModel);
     
     if (!result.success && result.reason === 'limit') {
       setShowUpgradeModal(true);
@@ -297,13 +326,7 @@ const Chat = () => {
           </div>
         </div>
         <div className="chat-header-actions">
-          <div className="chat-quota-badge" title="Messages remaining today">
-            {isPro ? (
-              <><Crown size={13} /> Pro</>
-            ) : (
-              <>💬 {chatsLeft}/{getMaxChats()}</>
-            )}
-          </div>
+
           <button className="chat-icon-action" onClick={() => navigate('/scan')} title={t('scanImage')}>
             <Camera size={17} />
           </button>
@@ -340,11 +363,6 @@ const Chat = () => {
             <img src={logoImg} alt="AgriFather AI" className="chat-welcome-logo" style={{ background: 'transparent', objectFit: 'contain' }} />
             <h2>{t('howCanIHelp')}</h2>
             <p>{t('chatDesc')}</p>
-            {!isPro && (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                💬 {chatsLeft} of {getMaxChats()} {t('freeMessages')}
-              </p>
-            )}
             <div className="chat-suggestion-chips">
               {SUGGESTIONS.map((s, i) => (
                 <button key={i} className="suggestion-chip" onClick={() => handleSendMessage(s)} disabled={chatLimitReached}>
@@ -449,27 +467,12 @@ const Chat = () => {
         </div>
       )}
 
-      {/* ── Input Area ── */}
-      <div className="chat-input-area">
-        <button className="chat-scan-shortcut" onClick={() => navigate('/scan')} title={t('scanImage')}>
-          <Camera size={22} />
-        </button>
-
-        {/* Voice Mic Button */}
-        <button
-          className={`chat-mic-btn ${isListening ? 'mic-active' : ''}`}
-          onClick={toggleMic}
-          title={isListening ? 'Stop listening' : 'Speak your question'}
-          disabled={loading || chatLimitReached}
-        >
-          {isListening ? <MicOff size={22} /> : <Mic size={22} />}
-          {isListening && <span className="mic-pulse" />}
-        </button>
-
-        <div className="input-wrapper">
+      {/* ── Modern Chatbox ── */}
+      <div className="modern-chat-box-wrapper">
+        <div className={`modern-chat-box ${isListening ? 'listening' : ''}`}>
           <textarea
             ref={inputRef}
-            className="chat-textarea hindi-text"
+            className="modern-textarea hindi-text"
             placeholder={chatLimitReached ? t('limitReached') : isListening ? t('listeningPlaceholder') : t('msgPlaceholder')}
             value={input}
             onChange={handleInputChange}
@@ -477,18 +480,77 @@ const Chat = () => {
             rows={1}
             disabled={loading || chatLimitReached}
           />
+
+          <div className="modern-toolbar">
+            <div className="toolbar-left">
+              <button className="toolbar-icon-btn" onClick={() => navigate('/scan')} title={t('scanImage')}>
+                <Camera size={18} />
+              </button>
+            </div>
+
+            <div className="toolbar-right">
+              {/* Model Selector */}
+              <div className="model-selector-wrapper">
+                <button
+                  className="model-selector-btn"
+                  onClick={() => setShowModelMenu(!showModelMenu)}
+                >
+                  <span>{AI_MODELS.find(m => m.id === selectedModel)?.label || 'Auto'}</span>
+                  <span className="model-count">{AI_MODELS.length}</span>
+                  <ChevronDown size={12} className={showModelMenu ? 'chevron-up' : ''} />
+                </button>
+
+                {showModelMenu && (
+                  <div className="model-dropdown">
+                    <div className="model-dropdown-header">
+                      <span>Select AI Model</span>
+                      <button className="model-close-btn" onClick={() => setShowModelMenu(false)}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                    {AI_MODELS.map((model) => (
+                      <button
+                        key={model.id}
+                        className={`model-option ${selectedModel === model.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setSelectedModel(model.id);
+                          setShowModelMenu(false);
+                        }}
+                      >
+                        <div className="model-option-info">
+                          <span className="model-option-name">{model.label}</span>
+                          <span className="model-option-desc">{model.desc}</span>
+                        </div>
+                        {selectedModel === model.id && <Check size={16} className="model-check" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                className={`toolbar-mic-btn ${isListening ? 'active' : ''}`}
+                onClick={toggleMic}
+                disabled={loading || chatLimitReached}
+                title={isListening ? 'Stop listening' : 'Speak'}
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+
+              <button
+                className={`modern-send-btn ${(!input.trim() || loading || chatLimitReached) ? 'disabled' : ''}`}
+                onClick={() => handleSendMessage()}
+                disabled={!input.trim() || loading || chatLimitReached}
+              >
+                {loading ? (
+                  <Loader size={18} className="spin-icon" />
+                ) : (
+                  <AudioLines size={20} />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          className={`icon-btn send-btn ${(!input.trim() || loading || chatLimitReached) ? 'send-disabled' : ''}`}
-          onClick={() => handleSendMessage()}
-          disabled={!input.trim() || loading || chatLimitReached}
-          title="Send"
-        >
-          {loading
-            ? <Loader size={20} color="#fff" className="spin-icon" />
-            : <ArrowUp size={22} color="#fff" />
-          }
-        </button>
       </div>
 
       {/* ── Chat Limit Upgrade Modal ── */}

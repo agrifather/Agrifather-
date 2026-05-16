@@ -32,7 +32,21 @@ const Scan = () => {
 
   const [globalLoading, setGlobalLoading] = useState(false);
 
+  // Protect route
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (!user) navigate('/login');
+  }, [navigate]);
+
   const [tokensLeft, setTokensLeft] = useState(() => getRemainingTokens());
+
+  // Sync when user data is updated globally
+  useEffect(() => {
+    const handleSync = () => setTokensLeft(getRemainingTokens());
+    window.addEventListener('user-synced', handleSync);
+    return () => window.removeEventListener('user-synced', handleSync);
+  }, []);
+
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Camera stream state
@@ -124,20 +138,40 @@ const Scan = () => {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
 
     try {
+      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('image', img.file);
       if (img.question.trim()) formData.append('question', img.question.trim());
 
       const res = await fetch(`${API_BASE}/api/scan`, { 
         method: 'POST', 
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: formData,
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+
+      if (res.status === 403) {
+        setTokensLeft(0);
+        setShowUpgradeModal(true);
+        updateImageField(idx, 'loading', false);
+        return;
+      }
+
       const data = await res.json();
 
       if (res.ok) {
-        // 1. Update the global context immediately (Context stays alive even if Scan.jsx unmounts)
+        // Sync local tokens
+        if (data.imageTokensUsed !== undefined) {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          user.imageTokensUsed = data.imageTokensUsed;
+          localStorage.setItem('user', JSON.stringify(user));
+          setTokensLeft(getRemainingTokens());
+        }
+
+        // 1. Update the global context immediately
         updateScanImageField(idx, 'result', data.analysis);
         updateScanImageField(idx, 'loading', false);
 
@@ -194,9 +228,6 @@ const Scan = () => {
           <h1 className="scan-header-title">Plant Scanner</h1>
           <p className="scan-header-sub">पत्ती / फसल / कीट पहचानें — Multiple images supported</p>
         </div>
-        <div className="scan-token-badge" title="Image scans remaining in 48h window">
-          {isPro ? (<><Crown size={14} /> Pro</>) : (<>📷 {tokensLeft}/{getMaxTokens()}</>)}
-        </div>
       </div>
 
       <div className="scan-body">
@@ -236,7 +267,7 @@ const Scan = () => {
               {!isPro && tokensLeft > 0 && tokensLeft <= 2 && (
                 <div className="scan-error-card" style={{ marginBottom: 12, borderColor: '#f59e0b', background: '#fffbeb' }}>
                   <AlertCircle size={16} color="#f59e0b" />
-                  <p style={{ color: '#92400e' }}>⚠️ Only <strong>{tokensLeft}</strong> scan{tokensLeft === 1 ? '' : 's'} left in this 48h window.</p>
+                  <p style={{ color: '#92400e' }}>⚠️ Only <strong>{tokensLeft}</strong> scan{tokensLeft === 1 ? '' : 's'} left in this 24h window.</p>
                 </div>
               )}
               {camError && (
@@ -417,7 +448,7 @@ const Scan = () => {
           <div className="token-expired-card" onClick={(e) => e.stopPropagation()}>
             <div className="expired-icon">🚫</div>
             <h3>Scan Limit Reached</h3>
-            <p>You've used all {getMaxTokens()} free image scans in this 48-hour window.</p>
+            <p>You've used all {getMaxTokens()} free image scans in this 24-hour window.</p>
             <p className="hindi-text" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
               आपके मुफ्त स्कैन समाप्त हो गए हैं
             </p>
