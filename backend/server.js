@@ -1198,11 +1198,14 @@ If the image is not related to agriculture, politely inform the user that you ar
     const imageUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
     const modelsToTry = [
-      'openrouter:google/gemma-3-27b-it:free',
-      'openrouter:google/gemma-3-4b-it:free',
-      'groq:llama-3.3-70b-versatile',
-      'openrouter:nvidia/llama-3.1-nemotron-70b-instruct:free',
-      'deepseek:deepseek-chat'
+      'groq:llama-3.2-90b-vision-preview',
+      'groq:llama-3.2-11b-vision-preview',
+      'openrouter:google/gemini-2.5-flash',
+      'openrouter:google/gemini-1.5-flash',
+      'openrouter:meta-llama/llama-3.2-11b-vision-instruct',
+      'openrouter:meta-llama/llama-3.2-90b-vision-instruct',
+      'openrouter:qwen/qwen-vl-plus',
+      'openrouter:mistralai/pixtral-12b'
     ];
 
     let analysis = null;
@@ -1221,12 +1224,21 @@ If the image is not related to agriculture, politely inform the user that you ar
         };
 
         let actualModel = model;
-        if (model.startsWith('grok:')) {
-          actualModel = model.replace('grok:', '');
-          url = 'https://api.x.ai/v1/chat/completions';
+        if (model.startsWith('groq:')) {
+          actualModel = model.replace('groq:', '');
+          url = 'https://api.groq.com/openai/v1/chat/completions';
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          };
+        } else if (model.startsWith('openrouter:')) {
+          actualModel = model.replace('openrouter:', '');
+          url = 'https://openrouter.ai/api/v1/chat/completions';
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': process.env.FRONTEND_URL || 'https://agrifather.vercel.app',
+            'X-Title': 'AgriFather AI'
           };
         } else if (model.startsWith('deepseek:')) {
           actualModel = model.replace('deepseek:', '');
@@ -1235,6 +1247,17 @@ If the image is not related to agriculture, politely inform the user that you ar
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
           };
+        } else if (model.startsWith('grok:')) {
+          actualModel = model.replace('grok:', '');
+          url = 'https://api.x.ai/v1/chat/completions';
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+          };
+        } else if (model.startsWith('hf:')) {
+          actualModel = model.replace('hf:', '');
+          url = `https://api-inference.huggingface.co/models/${actualModel}/v1/chat/completions`;
+          headers = { 'Content-Type': 'application/json' };
         }
 
         const response = await fetch(url, {
