@@ -272,3 +272,53 @@
 .link:hover {
   text-decoration: underline;
 }
+
+/* Requirements & Helper boxes */
+.password-rules-box, .username-rules-box {
+  margin-top: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.password-rules-box .rules-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 8px 0;
+}
+
+.rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rules-list li, .username-rules-box p {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.rules-list li.valid, .username-rules-box p.valid {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.rules-list li.invalid, .username-rules-box p.invalid {
+  color: #dc2626;
+}
+
+.rule-bullet {
+  font-weight: bold;
+  font-size: 0.95rem;
+}

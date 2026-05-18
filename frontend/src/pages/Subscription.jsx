@@ -228,7 +228,7 @@ const Subscription = () => {
       <div className="sub-hero">
         <div className="sub-badge">
           <Sparkles size={14} />
-          India's Most Advanced AI for Farmers
+          The World's Most Advanced AI for Farmers
         </div>
         <h1>
           Upgrade to<br />
@@ -236,9 +236,6 @@ const Subscription = () => {
         </h1>
         <p className="sub-hero-desc">
           Get unlimited AI farming advice, voice support, disease detection, and more.
-        </p>
-        <p className="sub-hero-hindi hindi-text">
-          असीमित कृषि सहायता के लिए अपग्रेड करें 🌾
         </p>
       </div>
 
@@ -385,13 +382,12 @@ const Subscription = () => {
       {/* Security badge */}
       <div className="sub-secure">
         <Shield size={14} />
-        Payments secured by Razorpay
+        Payments secured globally
       </div>
 
       {/* Footer */}
       <div className="sub-footer">
         <p>Cancel anytime. No hidden charges.</p>
-        <p>कभी भी रद्द करें। कोई छिपा शुल्क नहीं।</p>
       </div>
     </div>
   );

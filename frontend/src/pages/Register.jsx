@@ -12,6 +12,8 @@ const Register = () => {
   const [email, setEmail]     = useState('');
   const [crop, setCrop]       = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [otp, setOtp]         = useState('');
   
   const [showPwd, setShowPwd] = useState(false);
@@ -50,12 +52,21 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    if (name.trim().length < 3 || name.trim().length > 25) {
+      setError('Username must be between 3 and 25 characters.');
+      return;
+    }
     if (!/^[6-9]\d{9}$/.test(mobile)) {
       setError('Enter a valid 10-digit Indian mobile number.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError('Password must have at least 8 characters that include at least 1 lowercase character, 1 uppercase character, 1 number, and 1 special character in (!@#$%^&*)');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match / पासवर्ड मेल नहीं खाते हैं।');
       return;
     }
     if (!otp) {
@@ -87,6 +98,14 @@ const Register = () => {
     }
   };
 
+  const passwordChecks = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /\d/.test(password),
+    special: /[!@#$%^&*]/.test(password),
+  };
+
   return (
     <div className="register-wrapper">
       <div className="register-box">
@@ -116,6 +135,13 @@ const Register = () => {
                 required
               />
             </div>
+            {name && (
+              <div className="username-rules-box">
+                <p className={name.trim().length >= 3 && name.trim().length <= 25 ? 'valid' : 'invalid'}>
+                  <span className="rule-bullet">{name.trim().length >= 3 && name.trim().length <= 25 ? '✓' : '•'}</span> Username must be between 3 and 25 characters.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Mobile */}
@@ -184,7 +210,7 @@ const Register = () => {
             <div className="input-with-icon">
               <input
                 type={showPwd ? 'text' : 'password'}
-                placeholder="Min. 6 characters"
+                placeholder="Min. 8 characters with complexity"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -196,6 +222,50 @@ const Register = () => {
                 onClick={() => setShowPwd(v => !v)}
               >
                 {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {password && (
+              <div className="password-rules-box">
+                <p className="rules-title">Password requirements:</p>
+                <ul className="rules-list">
+                  <li className={passwordChecks.length ? 'valid' : 'invalid'}>
+                    <span className="rule-bullet">{passwordChecks.length ? '✓' : '•'}</span> At least 8 characters
+                  </li>
+                  <li className={passwordChecks.lowercase ? 'valid' : 'invalid'}>
+                    <span className="rule-bullet">{passwordChecks.lowercase ? '✓' : '•'}</span> At least 1 lowercase character
+                  </li>
+                  <li className={passwordChecks.uppercase ? 'valid' : 'invalid'}>
+                    <span className="rule-bullet">{passwordChecks.uppercase ? '✓' : '•'}</span> At least 1 uppercase character
+                  </li>
+                  <li className={passwordChecks.number ? 'valid' : 'invalid'}>
+                    <span className="rule-bullet">{passwordChecks.number ? '✓' : '•'}</span> At least 1 number
+                  </li>
+                  <li className={passwordChecks.special ? 'valid' : 'invalid'}>
+                    <span className="rule-bullet">{passwordChecks.special ? '✓' : '•'}</span> At least 1 special character in (!@#$%^&*)
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div className="form-group">
+            <label>Confirm Password / पासवर्ड की पुष्टि करें</label>
+            <div className="input-with-icon">
+              <input
+                type={showConfirmPwd ? 'text' : 'password'}
+                placeholder="Repeat your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                style={{ paddingLeft: '16px' }}
+              />
+              <button
+                type="button"
+                className="reg-pwd-toggle"
+                onClick={() => setShowConfirmPwd(v => !v)}
+              >
+                {showConfirmPwd ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
