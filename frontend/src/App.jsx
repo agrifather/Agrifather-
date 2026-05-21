@@ -27,6 +27,9 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Subscription from './pages/Subscription';
 import ResetPassword from './pages/ResetPassword';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Cookies from './pages/Cookies';
 
 import API_BASE from './utils/api';
 
@@ -105,6 +108,9 @@ function App() {
                 <Route path="/seed/:id" element={<SeedDetail />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/subscription" element={<Subscription />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/cookies" element={<Cookies />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Router>

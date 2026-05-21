@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sun, Moon, Globe, Volume2, MessageSquare, Bell, Shield, HelpCircle, X } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, Globe, Volume2, MessageSquare, Bell, Shield, HelpCircle, Scale, HardDrive, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useTheme } from '../context/ThemeContext';
@@ -184,7 +184,7 @@ const Settings = () => {
         <div className="settings-section">
           <h3 className="section-heading hindi-text">{t('support')}</h3>
 
-          <div className="setting-card setting-card-btn" onClick={() => setModal('privacy')}>
+          <div className="setting-card setting-card-btn" onClick={() => navigate('/privacy')}>
             <div className="setting-left">
               <div className="setting-icon-wrapper">
                 <Shield size={20} color="#2da84a" />
@@ -192,6 +192,32 @@ const Settings = () => {
               <div className="setting-text">
                 <h4 className="setting-title hindi-text">{t('privacyPolicy')}</h4>
                 <p className="setting-subtitle">{t('readPrivacy')}</p>
+              </div>
+            </div>
+            <span className="setting-arrow">›</span>
+          </div>
+
+          <div className="setting-card setting-card-btn" onClick={() => navigate('/terms')}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <Scale size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">Terms &amp; Conditions</h4>
+                <p className="setting-subtitle">Read User Agreement &amp; AI Disclaimers</p>
+              </div>
+            </div>
+            <span className="setting-arrow">›</span>
+          </div>
+
+          <div className="setting-card setting-card-btn" onClick={() => navigate('/cookies')}>
+            <div className="setting-left">
+              <div className="setting-icon-wrapper">
+                <HardDrive size={20} color="#2da84a" />
+              </div>
+              <div className="setting-text">
+                <h4 className="setting-title hindi-text">Cookie &amp; Storage Policy</h4>
+                <p className="setting-subtitle">LocalStorage usage &amp; data keys</p>
               </div>
             </div>
             <span className="setting-arrow">›</span>
@@ -244,6 +270,9 @@ const Settings = () => {
                 <p>AgriFather collects only the information you provide (name, mobile number, crop preference) to personalise your farming experience. Your data is never sold to third parties.</p>
                 <p>All AI conversations are processed via OpenRouter and are not stored on our servers beyond the current session.</p>
                 <p>For queries, contact: <strong>support@agrifather.in</strong></p>
+                <p style={{ marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                  For the full User Agreement and Business/Product terms, please read our <a href="/terms" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms &amp; Conditions</a>.
+                </p>
               </>
             )}
             {modal === 'help' && (

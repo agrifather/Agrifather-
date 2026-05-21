@@ -306,7 +306,7 @@ const Register = () => {
               <input type="checkbox" required />
               <span className="checkmark"></span>
               <span className="terms-text">
-                I agree to the <Link to="/register">Terms</Link> &amp; <Link to="/register">Privacy Policy</Link>
+                I agree to the <Link to="/terms">Terms &amp; Conditions</Link> &amp; <Link to="/privacy">Privacy Policy</Link>
               </span>
             </label>
           </div>
