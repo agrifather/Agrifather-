@@ -269,7 +269,7 @@ const Settings = () => {
                 <h3>{t('privacyPolicy')}</h3>
                 <p>AgriFather collects only the information you provide (name, mobile number, crop preference) to personalise your farming experience. Your data is never sold to third parties.</p>
                 <p>All AI conversations are processed via OpenRouter and are not stored on our servers beyond the current session.</p>
-                <p>For queries, contact: <strong>support@agrifather.in</strong></p>
+                <p>For queries, contact: <strong>support@agrifather.com</strong></p>
                 <p style={{ marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
                   For the full User Agreement and Business/Product terms, please read our <a href="/terms" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms &amp; Conditions</a>.
                 </p>
@@ -280,7 +280,7 @@ const Settings = () => {
                 <h3>{t('helpSupport')}</h3>
                 <p><strong>Q: How do I scan my crop?</strong><br />Go to the Scanner tab, tap Camera or Gallery, select an image, then tap "Analyze with AI".</p>
                 <p><strong>Q: How does OTP login work?</strong><br />Enter your registered mobile number and tap "Login with OTP".</p>
-                <p><strong>Q: Who do I contact for help?</strong><br />Email us at <strong>support@agrifather.in</strong> or call <strong>1800-XXX-XXXX</strong>.</p>
+                <p><strong>Q: Who do I contact for help?</strong><br />Email us at <strong>support@agrifather.com</strong> or call <strong>1800-XXX-XXXX</strong>.</p>
               </>
             )}
 
